@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "",
+  "authors": ["pugur"],
+  "contact": {
+    "sources": "https://github.com/pug523/shelf",
+    "issues": "https://github.com/pug523/shelf/issues"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/shelf/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.pug523.shelf.Shelf"
+    ],
+    "modmenu": [
+      "com.pug523.shelf.compat.modmenu.ModMenuApiImpl"
+    ]
+  },
+  "mixins": [
+    "shelf.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_dependency}"
+  },
+  "suggests": {
+    "modmenu": "*"
+  },
+  "custom": {
+    "modmenu": {
+    }
+  }
+}

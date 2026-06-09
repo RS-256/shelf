@@ -1,0 +1,216 @@
+final int mcVersion = project.mcVersion
+final boolean unobfuscated = mcVersion >= 26_00_00
+
+apply plugin: 'maven-publish'
+apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
+apply plugin: 'com.replaymod.preprocess'
+
+final ArrayList<String> mixinFiles = ["shelf.mixins.json", "shelf.client.mixins.json"]
+
+repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
+    maven {
+        url = 'https://jitpack.io'
+    }
+    maven {
+        url = 'https://maven.fallenbreath.me/releases'
+    }
+}
+
+// https://github.com/FabricMC/fabric-loader/issues/783
+configurations {
+    modRuntimeOnly.exclude group: 'net.fabricmc', module: 'fabric-loader'
+}
+configurations {
+    modImplementation.exclude group: 'io.github.prospector', module: 'modmenu'
+}
+
+dependencies {
+    def autoImplementation = { Object... args -> unobfuscated ? implementation(*args) : modImplementation(*args) }
+    def autoRuntimeOnly = { Object... args -> unobfuscated ? runtimeOnly(*args) : modRuntimeOnly(*args) }
+    def autoCompileOnly = { Object... args -> unobfuscated ? compileOnly(*args) : modCompileOnly(*args) }
+
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    if (!unobfuscated) {
+        mappings loom.officialMojangMappings()
+    }
+
+    autoImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    autoImplementation "maven.modrinth:modmenu:${project.modmenu_version}"
+    // autoImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    include(autoImplementation("me.fallenbreath:conditional-mixin-fabric:${project.conditional_mixin_version}"))
+}
+
+JavaVersion javaCompatibility
+if (mcVersion >= 260100) {
+    javaCompatibility = JavaVersion.VERSION_25
+} else if (mcVersion >= 12005) {
+    javaCompatibility = JavaVersion.VERSION_21
+} else if (mcVersion >= 11800) {
+    javaCompatibility = JavaVersion.VERSION_17
+} else if (mcVersion >= 11700) {
+    javaCompatibility = JavaVersion.VERSION_16
+} else {
+    javaCompatibility = JavaVersion.VERSION_1_8
+}
+final JavaVersion JAVA_COMPATIBILITY = javaCompatibility
+final JavaVersion MIXIN_COMPATIBILITY_LEVEL = javaCompatibility
+
+loom {
+    accessWidenerPath = file("${project.mod_id}.accesswidener")
+
+    def commonVmArgs = ['-Dmixin.debug.export=true']
+    if (mcVersion < 11904) {
+        // carpet 1.4.100+v230314 for mc1.19.4 and above
+        // fail to pass the check on at MinecraftServer_pingPlayerSampleLimit#modifyPlayerSampleLimit
+        // see https://github.com/gnembon/fabric-carpet/pull/1938
+        commonVmArgs.add('-Dmixin.debug.countInjections=true')
+    }
+    runConfigs.configureEach {
+        runDir '../../run'
+        vmArgs commonVmArgs
+        ideConfigGenerated true
+    }
+
+    runs {
+        def auditVmArgs = ["-D${project.mod_id}.mixin_audit=true"]
+        serverMixinAudit {
+            server()
+            vmArgs auditVmArgs
+            ideConfigGenerated false
+        }
+        clientMixinAudit {
+            client()
+            vmArgs auditVmArgs
+            ideConfigGenerated false
+        }
+    }
+
+    // splitEnvironmentSourceSets()
+
+    // mods {
+    //     "shelf" {
+    //         sourceSet sourceSets.main
+    //         sourceSet sourceSets.client
+    //     }
+    // }
+}
+
+String modVersionSuffix = ''
+String artifactVersion = project.mod_version
+String artifactVersionSuffix = ''
+// detect github action environment variables
+// https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
+if (System.getenv("BUILD_RELEASE") != "true") {
+    String buildNumber = System.getenv("BUILD_ID")
+    modVersionSuffix += buildNumber != null ? ('+build.' + buildNumber) : '-SNAPSHOT'
+    artifactVersionSuffix = '-SNAPSHOT'  // A non-release artifact is always a SNAPSHOT artifact
+}
+String fullModVersion = project.mod_version + modVersionSuffix
+String fullProjectVersion = "v${artifactVersion}-mc${project.minecraft_version}-${modVersionSuffix}"
+String fullArtifactVersion = "${artifactVersion}-mc${project.minecraft_version}-${artifactVersionSuffix}"
+// shelf version values:
+//   artifactVersion         1.0.3                              (the base mod version)
+//   modVersionSuffix        +build.168                         (use github action build number if possible)
+//   artifactVersionSuffix   -SNAPSHOT
+//   fullModVersion          0.1.0+build.168                    (the actual mod version to use in the mod)
+//   fullProjectVersion      v0.1.0-mc26.1.2-fabric+build.168   (in build output jar name)
+//   fullArtifactVersion     0.1.0-mc26.1.2-fabric-SNAPSHOT     (maven artifact version)
+
+group = project.maven_group
+if (System.getenv("JITPACK") == "true") {
+    // move mc version into archivesBaseName, so jitpack will be able to organize archives from multiple subprojects correctly
+    base.archivesName = project.archives_base_name + '-mc' + project.minecraft_version
+    fullProjectVersion = 'v' + project.mod_version + modVersionSuffix
+    fullArtifactVersion = artifactVersion + artifactVersionSuffix
+} else {
+    base.archivesName = project.archives_base_name
+    fullProjectVersion = 'v' + project.mod_version + '-mc' + project.minecraft_version + modVersionSuffix
+    fullArtifactVersion = artifactVersion + '-mc' + project.minecraft_version + artifactVersionSuffix
+}
+version = fullProjectVersion
+
+// fabricApi {
+//     configureDataGeneration {
+//         client = true
+//     }
+// }
+
+processResources {
+    from "${project.mod_id}.accesswidener"
+
+    inputs.property "mod_id", project.mod_id
+    inputs.property "mod_version", project.mod_version
+    inputs.property "mod_name", project.mod_name
+    inputs.property "loader_version", project.loader_version
+    inputs.property "minecraft_dependency", project.minecraft_dependency
+    filteringCharset = "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "mod_id": project.mod_id,
+               "mod_version": project.mod_version,
+               "mod_name": project.mod_name,
+               "loader_version": project.loader_version,
+               "minecraft_dependency": project.minecraft_dependency
+    }
+
+    mixinFiles.each { mixinConfigPath ->
+        filesMatching(mixinConfigPath) {
+            filter { s -> s.replace('{{COMPATIBILITY_LEVEL}}', "JAVA_${MIXIN_COMPATIBILITY_LEVEL.ordinal() + 1}") }
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // ensure that the encoding is set to UTF-8, no matter what the system default is
+    // this fixes some edge cases with special characters not displaying correctly
+    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
+    it.options.encoding = "UTF-8"
+    it.options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
+    if (JAVA_COMPATIBILITY <= JavaVersion.VERSION_1_8) {
+      // suppressed "source/target value 8 is obsolete and will be removed in a future release"
+      it.options.compilerArgs << '-Xlint:-options'
+    }
+}
+
+java {
+    sourceCompatibility = JAVA_COMPATIBILITY
+    targetCompatibility = JAVA_COMPATIBILITY
+
+    // def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    // if (JavaVersion.current() < javaVersion) {
+    //     toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    // }
+
+    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+    // if it is present.
+    // If you remove this line, sources will not be generated.
+    withSourcesJar()
+}
+
+jar {
+    from("../../LICENSE") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+        // Notice: This block does NOT have the same function as the block in the top level.
+        // The repositories here will be used for publishing your artifact, not for
+        // retrieving dependencies.
+    }
+}

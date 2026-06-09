@@ -1,0 +1,34 @@
+{
+  "shelf.lib.config.gui.search": "Search",
+  "shelf.lib.config.gui.done": "Done",
+  "shelf.lib.config.gui.apply": "Apply",
+  "shelf.lib.config.gui.undo": "Undo",
+  "shelf.lib.config.gui.select_an_option": "Select an option...",
+  "shelf.lib.config.gui.default_profile": "Default Profile",
+
+  "shelf.mod.config.title": "Shelf",
+
+  "shelf.mod.config.category.all_settings": "All Settings",
+  "shelf.mod.config.category.general": "General",
+  "shelf.mod.config.category.core": "Core",
+  "shelf.mod.config.category.video": "Video",
+  "shelf.mod.config.category.display": "Display",
+  "shelf.mod.config.category.screen": "Screen",
+  "shelf.mod.config.category.performance": "Performance",
+  "shelf.mod.config.category.graphics": "Graphics",
+  "shelf.mod.config.category.advanced_tweaks": "Advanced Tweaks",
+  "shelf.mod.config.category.experimental_shaders": "Experimental Shaders",
+
+  "shelf.mod.config.option.auto_restock": "Auto Restock",
+  "shelf.mod.config.option.auto_restock.desc": "Restocks items which is specified in restockable list.",
+  "shelf.mod.config.option.fov": "Field of View",
+  "shelf.mod.config.option.fov.desc": "The field of view, angular extent of the observable world.",
+  "shelf.mod.config.option.render_distance": "Render Distance",
+  "shelf.mod.config.option.render_distance.desc": "The render distance. If this value is set to high, it impacts performance massively.",
+  "shelf.mod.config.option.volume": "Master Volume",
+  "shelf.mod.config.option.volume.desc": "The master volume of the game.",
+  "shelf.mod.config.option.sensitivity": "Sensitivity",
+  "shelf.mod.config.option.sensitivity.desc": "In game mouse sensitivity (%).",
+  "shelf.mod.config.option.vsync": "V-Sync",
+  "shelf.mod.config.option.vsync.desc": "Vertical synchronization (VSync) is an option in most systems in which the video card is prevented from doing anything visible to the display memory until after the monitor finishes its current refresh cycle."
+}
