@@ -62,7 +62,7 @@ jobs:
         ls -l mod-jars
 
     - name: Upload mod jars
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: mod-jars
         path: mod-jars/*.jar
