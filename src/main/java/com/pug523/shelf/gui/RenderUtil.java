@@ -1,4 +1,4 @@
-package com.pug523.shelf.gui.widget;
+package com.pug523.shelf.gui;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
