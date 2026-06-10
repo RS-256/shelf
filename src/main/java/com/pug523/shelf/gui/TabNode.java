@@ -2,13 +2,17 @@ package com.pug523.shelf.gui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
+
 import net.minecraft.network.chat.Component;
 
 public class TabNode {
     private final Component name;
     private final List<OptionGroup> optionGroups = new ArrayList<>();
     private final List<TabNode> children = new ArrayList<>();
-    private int depth = 0; // Set dynamically when calculating visibility layout.
+
+    // Set dynamically when calculating visibility layout.
+    private int depth = 0;
     private boolean expanded = true;
 
     public TabNode(Component name) {
@@ -48,5 +52,12 @@ public class TabNode {
                 child.flattenVisible(list, currentDepth + 1);
             }
         }
+    }
+
+    public Stream<TabNode> streamAllNodes() {
+        return Stream.concat(
+            Stream.of(this),
+            this.children.stream().flatMap(TabNode::streamAllNodes)
+        );
     }
 }
