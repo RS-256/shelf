@@ -42,6 +42,10 @@ dependencies {
     autoImplementation "maven.modrinth:modmenu:${project.modmenu_version}"
     // autoImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     include(autoImplementation("me.fallenbreath:conditional-mixin-fabric:${project.conditional_mixin_version}"))
+
+    if (mcVersion <= 12108) {
+      autoCompileOnly("org.jspecify:jspecify:${project.jspecify_version}")
+    }
 }
 
 JavaVersion javaCompatibility
@@ -70,7 +74,7 @@ loom {
         commonVmArgs.add('-Dmixin.debug.countInjections=true')
     }
     runConfigs.configureEach {
-        runDir '../../run'
+        runDir "../../run/${project.minecraft_version}"
         vmArgs commonVmArgs
         ideConfigGenerated true
     }
