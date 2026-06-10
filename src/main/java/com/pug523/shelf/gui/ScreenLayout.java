@@ -1,7 +1,7 @@
 package com.pug523.shelf.gui;
 
 public class ScreenLayout {
-    private final int width;
+    // private final int width;
     private final int height;
     private final LayoutConfig config;
 
@@ -12,7 +12,7 @@ public class ScreenLayout {
     public final int mainContentHeight;
 
     public ScreenLayout(int width, int height, LayoutConfig config) {
-        this.width = width;
+        // this.width = width;
         this.height = height;
         this.config = config;
 
