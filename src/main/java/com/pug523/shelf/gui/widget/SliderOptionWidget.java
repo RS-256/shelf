@@ -1,18 +1,17 @@
 package com.pug523.shelf.gui.widget;
 
+import java.util.function.Function;
+
+import com.pug523.shelf.config.Option;
+import com.pug523.shelf.gui.Colors;
+import com.pug523.shelf.gui.RenderUtil;
+
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
-import java.util.function.Supplier;
-
-import com.pug523.shelf.gui.Colors;
-
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-public class SliderOptionWidget<N extends Number & Comparable<N>> implements OptionWidget {
+public class SliderOptionWidget<N extends Number & Comparable<N>> extends OptionWidget {
     // Dimensions & Layout
     private static final int SLIDER_WIDTH = 80;
     private static final int SLIDER_HEIGHT = 4;
@@ -26,9 +25,6 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> implements Opt
     private static final int COLOR_KNOB = Colors.WHITE;
     private static final int COLOR_TEXT = Colors.OFF_WHITE;
 
-    private final Supplier<N> getter;
-    private final Consumer<N> setter;
-
     private final double min;
     private final double max;
     private final double step;
@@ -38,26 +34,25 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> implements Opt
     private int cachedX, cachedY, cachedWidth, cachedHeight;
     private boolean isDragging = false;
 
-    public SliderOptionWidget(Supplier<N> getter, Consumer<N> setter, N min, N max, N step, boolean round, Function<Double, N> typeConverter) {
-        this.getter = getter;
-        this.setter = setter;
+    public SliderOptionWidget(Option<N> option, N min, N max, N step, boolean round, Function<Double, N> typeConverter) {
         this.min = min.doubleValue();
         this.max = max.doubleValue();
         this.step = step.doubleValue();
         this.round = round;
         this.typeConverter = typeConverter;
+        super(option);
     }
 
-    public static SliderOptionWidget<Integer> ofInt(Supplier<Integer> getter, Consumer<Integer> setter, int min, int max, int step, boolean round) {
-        return new SliderOptionWidget<>(getter, setter, min, max, step, round, d -> (int) Math.round(d));
+    public static OptionWidget<Integer> ofInt(Option<Integer> option, int min, int max, int step, boolean round) {
+        return new SliderOptionWidget<Integer>(option, min, max, step, round, d -> (int) Math.round(d));
     }
 
-    public static SliderOptionWidget<Double> ofDouble(Supplier<Double> getter, Consumer<Double> setter, double min, double max, double step, boolean round) {
-        return new SliderOptionWidget<>(getter, setter, min, max, step, round, d -> d);
+    public static OptionWidget<Double> ofDouble(Option<Double> option, double min, double max, double step, boolean round) {
+        return new SliderOptionWidget<Double>(option, min, max, step, round, d -> d);
     }
 
-    public static SliderOptionWidget<Float> ofFloat(Supplier<Float> getter, Consumer<Float> setter, float min, float max, float step, boolean round) {
-        return new SliderOptionWidget<>(getter, setter, min, max, step, round, d -> (float) d.floatValue());
+    public static OptionWidget<Float> ofFloat(Option<Float> option, float min, float max, float step, boolean round) {
+        return new SliderOptionWidget<Float>(option, min, max, step, round, d -> (float) d.floatValue());
     }
 
     @Override
@@ -70,7 +65,7 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> implements Opt
         int sliderX = x + width - SLIDER_WIDTH - PADDING_X;
         int sliderY = y + (height - SLIDER_HEIGHT) / 2;
 
-        double currentValue = getter.get().doubleValue();
+        double currentValue = ((Option<N>)option).getPendingValue().doubleValue();
         double progress = Mth.clamp((currentValue - min) / (max - min), 0.0, 1.0);
 
         // Track
@@ -145,7 +140,7 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> implements Opt
         rawValue = Mth.clamp(rawValue, min, max);
 
         N finalValue = typeConverter.apply(rawValue);
-        setter.accept(finalValue);
+        option.setPendingValue(finalValue);
     }
 
     private String formatValue(double value) {
@@ -154,11 +149,5 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> implements Opt
         } else {
             return String.format("%.2f", value);
         }
-    }
-
-    @Override
-    public OptionWidget.Memento captureSnapshot() {
-        final N savedValue = this.getter.get();
-        return () -> this.setter.accept(savedValue);
     }
 }

@@ -1,9 +1,8 @@
 package com.pug523.shelf.gui.widget;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
+import com.pug523.shelf.config.Option;
 import com.pug523.shelf.gui.Colors;
+import com.pug523.shelf.gui.RenderUtil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -11,7 +10,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 
-public class BooleanOptionWidget implements OptionWidget {
+public class BooleanOptionWidget extends OptionWidget {
     public static final int COLOR_TOGGLE_BG_OFF = Colors.MIDDLE_GRAY;
     public static final int COLOR_TOGGLE_BG_ON = Colors.GREEN2;
     public static final int COLOR_KNOB = Colors.WHITE;
@@ -24,16 +23,17 @@ public class BooleanOptionWidget implements OptionWidget {
     private static final int PADDING_RIGHT = 25;
     private static final int HITBOX_PADDING = 4;
 
-    private final Supplier<Boolean> getter;
-    private final Consumer<Boolean> setter;
     private final boolean round;
 
     private int cachedX, cachedY, cachedWidth, cachedHeight;
 
-    public BooleanOptionWidget(Supplier<Boolean> getter, Consumer<Boolean> setter, boolean round) {
-        this.getter = getter;
-        this.setter = setter;
+    public BooleanOptionWidget(Option<Boolean> option, boolean round) {
         this.round = round;
+        super(option);
+    }
+
+    public static OptionWidget<Boolean> of(Option<Boolean> option, boolean round) {
+        return new BooleanOptionWidget(option, round);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class BooleanOptionWidget implements OptionWidget {
         int switchX = x + width - SWITCH_WIDTH - PADDING_RIGHT;
         int switchY = y + (height - SWITCH_HEIGHT) / 2;
 
-        boolean val = getter.get();
+        boolean val = ((Option<Boolean>)option).getPendingValue().booleanValue();
         boolean isHovered = mouseX >= switchX - HITBOX_PADDING && mouseX <= switchX + SWITCH_WIDTH + HITBOX_PADDING &&
                             mouseY >= switchY - HITBOX_PADDING && mouseY <= switchY + SWITCH_HEIGHT + HITBOX_PADDING;
 
@@ -86,11 +86,11 @@ public class BooleanOptionWidget implements OptionWidget {
             int switchX = cachedX + cachedWidth - SWITCH_WIDTH - PADDING_RIGHT;
             int switchY = cachedY + (cachedHeight - SWITCH_HEIGHT) / 2;
 
-            // Generous click box for small elements
+            // Generous click box for small elements.
             if (mouseX >= switchX - HITBOX_PADDING && mouseX <= switchX + SWITCH_WIDTH + HITBOX_PADDING &&
                 mouseY >= switchY - HITBOX_PADDING && mouseY <= switchY + SWITCH_HEIGHT + HITBOX_PADDING) {
 
-                // Play vanilla UI click sound
+                // Play vanilla UI click sound.
                 Minecraft.getInstance().getSoundManager().play(
                     SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F)
                 );
@@ -103,12 +103,6 @@ public class BooleanOptionWidget implements OptionWidget {
     }
 
     private void toggle() {
-        setter.accept(!getter.get());
-    }
-
-    @Override
-    public OptionWidget.Memento captureSnapshot() {
-        final boolean savedValue = this.getter.get();
-        return () -> this.setter.accept(savedValue);
+        option.setPendingValue(!((Option<Boolean>)option).getPendingValue());
     }
 }
