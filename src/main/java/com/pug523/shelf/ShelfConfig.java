@@ -8,5 +8,5 @@ public class ShelfConfig {
     public Float sensitivity = 1.0f;
     public Boolean vsync = false;
 
-    public static final ShelfConfig defaultConfig = new ShelfConfig();
+    public transient static final ShelfConfig defaultConfig = new ShelfConfig();
 }

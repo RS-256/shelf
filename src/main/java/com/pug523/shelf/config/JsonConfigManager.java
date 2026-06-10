@@ -28,11 +28,14 @@ public class JsonConfigManager<T> implements ConfigManager<T> {
     }
 
     public JsonConfigManager(Class<T> configClass, String configDirectory, String fileName, Supplier<T> defaultSupplier) {
-        File f = FabricLoader.getInstance().getConfigDir()
-            .resolve(configDirectory)
-            .resolve(fileName)
+        this(configClass, resolveConfigFile(configDirectory, fileName), defaultSupplier);
+    }
+
+    private static File resolveConfigFile(String dir, String file) {
+        return FabricLoader.getInstance().getConfigDir()
+            .resolve(dir)
+            .resolve(file)
             .toFile();
-        this(configClass, f, defaultSupplier);
     }
 
     @Override

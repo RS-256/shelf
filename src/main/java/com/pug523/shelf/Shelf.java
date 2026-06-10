@@ -32,7 +32,7 @@ public class Shelf implements ClientModInitializer {
     public void onInitializeClient() {
         VERSION = FabricLoader.getInstance().getModContainer(MOD_ID).orElseThrow(RuntimeException::new).getMetadata().getVersion().getFriendlyString();
 
-        CONFIG = new TomlConfigManager(ShelfConfig.class, Shelf.MOD_ID, "config.toml", ShelfConfig::new);
+        CONFIG = new TomlConfigManager<ShelfConfig>(ShelfConfig.class, Shelf.MOD_ID, "config.toml", ShelfConfig::new);
         CONFIG.load();
     }
 }

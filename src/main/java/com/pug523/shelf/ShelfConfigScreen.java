@@ -10,7 +10,6 @@ import com.pug523.shelf.gui.ConfigScreen;
 import com.pug523.shelf.gui.OptionGroup;
 import com.pug523.shelf.gui.TabNode;
 import com.pug523.shelf.gui.widget.BooleanOptionWidget;
-import com.pug523.shelf.gui.widget.OptionWidget;
 import com.pug523.shelf.gui.widget.SliderOptionWidget;
 
 import net.minecraft.client.gui.screens.Screen;
@@ -27,7 +26,7 @@ public class ShelfConfigScreen {
 
         TabNode generalNode = new TabNode(categoryText("general"))
             .addGroup(new OptionGroup(categoryText("core"), List.of(
-                BooleanOptionWidget.of(new Option<>(key("option.auto_restock"), defaultConfig.autoRestock, () -> config.autoRestock, (v) -> config.autoRestock = v, List.of()), false),
+                new BooleanOptionWidget(new Option<>(key("option.auto_restock"), defaultConfig.autoRestock, () -> config.autoRestock, (v) -> config.autoRestock = v, List.of()), false),
                 SliderOptionWidget.ofFloat(new Option<>(key("option.sensitivity"), defaultConfig.sensitivity, () -> config.sensitivity, (v) -> config.sensitivity = v, List.of()), 0.1f, 2.0f, 0.1f, false)
             )));
 
@@ -40,12 +39,12 @@ public class ShelfConfigScreen {
 
         TabNode performanceNode = new TabNode(categoryText("performance"))
             .addGroup(new OptionGroup(categoryText("graphics"), List.of(
-                SliderOptionWidget.ofInt(new Option<>(key("option.render_distance"), defaultConfig.renderDistance, () -> config.renderDistance = v, (v) -> config.renderDistance = v, List.of()), 2, 32, 1, false)
+                SliderOptionWidget.ofInt(new Option<>(key("option.render_distance"), defaultConfig.renderDistance, () -> config.renderDistance, (v) -> config.renderDistance = v, List.of()), 2, 32, 1, false)
             )));
 
         TabNode advancedVideoTweaks = new TabNode(categoryText("advanced_tweaks"))
             .addGroup(new OptionGroup(categoryText("experimental_shaders"), List.of(
-                BooleanOptionWidget.of(new Option<>(key("option.vsync"), defaultConfig.vsync, () -> config.vsync, (v) -> config.vsync = v, List.of()), false)
+                new BooleanOptionWidget(new Option<>(key("option.vsync"), defaultConfig.vsync, () -> config.vsync, (v) -> config.vsync = v, List.of()), false)
             )));
 
         // Link them up recursively.

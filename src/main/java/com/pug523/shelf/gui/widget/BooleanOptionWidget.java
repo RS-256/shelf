@@ -10,7 +10,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 
-public class BooleanOptionWidget extends OptionWidget {
+public class BooleanOptionWidget extends OptionWidget<Boolean> {
     public static final int COLOR_TOGGLE_BG_OFF = Colors.MIDDLE_GRAY;
     public static final int COLOR_TOGGLE_BG_ON = Colors.GREEN2;
     public static final int COLOR_KNOB = Colors.WHITE;
@@ -28,12 +28,8 @@ public class BooleanOptionWidget extends OptionWidget {
     private int cachedX, cachedY, cachedWidth, cachedHeight;
 
     public BooleanOptionWidget(Option<Boolean> option, boolean round) {
-        this.round = round;
         super(option);
-    }
-
-    public static OptionWidget<Boolean> of(Option<Boolean> option, boolean round) {
-        return new BooleanOptionWidget(option, round);
+        this.round = round;
     }
 
     @Override
@@ -46,7 +42,7 @@ public class BooleanOptionWidget extends OptionWidget {
         int switchX = x + width - SWITCH_WIDTH - PADDING_RIGHT;
         int switchY = y + (height - SWITCH_HEIGHT) / 2;
 
-        boolean val = ((Option<Boolean>)option).getPendingValue().booleanValue();
+        boolean val = option.getPendingValue().booleanValue();
         boolean isHovered = mouseX >= switchX - HITBOX_PADDING && mouseX <= switchX + SWITCH_WIDTH + HITBOX_PADDING &&
                             mouseY >= switchY - HITBOX_PADDING && mouseY <= switchY + SWITCH_HEIGHT + HITBOX_PADDING;
 
@@ -103,6 +99,6 @@ public class BooleanOptionWidget extends OptionWidget {
     }
 
     private void toggle() {
-        option.setPendingValue(!((Option<Boolean>)option).getPendingValue());
+        option.setPendingValue(!option.getPendingValue());
     }
 }

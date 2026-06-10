@@ -11,7 +11,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
-public class SliderOptionWidget<N extends Number & Comparable<N>> extends OptionWidget {
+public class SliderOptionWidget<N extends Number & Comparable<N>> extends OptionWidget<N> {
     // Dimensions & Layout
     private static final int SLIDER_WIDTH = 80;
     private static final int SLIDER_HEIGHT = 4;
@@ -35,23 +35,23 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
     private boolean isDragging = false;
 
     public SliderOptionWidget(Option<N> option, N min, N max, N step, boolean round, Function<Double, N> typeConverter) {
+        super(option);
         this.min = min.doubleValue();
         this.max = max.doubleValue();
         this.step = step.doubleValue();
         this.round = round;
         this.typeConverter = typeConverter;
-        super(option);
     }
 
-    public static OptionWidget<Integer> ofInt(Option<Integer> option, int min, int max, int step, boolean round) {
+    public static SliderOptionWidget<Integer> ofInt(Option<Integer> option, int min, int max, int step, boolean round) {
         return new SliderOptionWidget<Integer>(option, min, max, step, round, d -> (int) Math.round(d));
     }
 
-    public static OptionWidget<Double> ofDouble(Option<Double> option, double min, double max, double step, boolean round) {
+    public static SliderOptionWidget<Double> ofDouble(Option<Double> option, double min, double max, double step, boolean round) {
         return new SliderOptionWidget<Double>(option, min, max, step, round, d -> d);
     }
 
-    public static OptionWidget<Float> ofFloat(Option<Float> option, float min, float max, float step, boolean round) {
+    public static SliderOptionWidget<Float> ofFloat(Option<Float> option, float min, float max, float step, boolean round) {
         return new SliderOptionWidget<Float>(option, min, max, step, round, d -> (float) d.floatValue());
     }
 
@@ -65,7 +65,7 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
         int sliderX = x + width - SLIDER_WIDTH - PADDING_X;
         int sliderY = y + (height - SLIDER_HEIGHT) / 2;
 
-        double currentValue = ((Option<N>)option).getPendingValue().doubleValue();
+        double currentValue = option.getPendingValue().doubleValue();
         double progress = Mth.clamp((currentValue - min) / (max - min), 0.0, 1.0);
 
         // Track
