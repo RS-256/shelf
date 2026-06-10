@@ -1,23 +1,25 @@
 package com.pug523.shelf.gui;
 
-import net.minecraft.network.chat.Component;
-
 import java.util.List;
+
+import com.pug523.shelf.gui.widget.OptionWidget;
+
+import net.minecraft.network.chat.Component;
 
 public class OptionGroup {
     private final Component name;
-    private final List<Option<?>> options;
+    private final List<OptionWidget<?>> optionWidgets;
 
-    public OptionGroup(Component name, List<Option<?>> options) {
+    public OptionGroup(Component name, List<OptionWidget<?>> optionWidgets) {
         this.name = name;
-        this.options = options;
+        this.optionWidgets = optionWidgets;
     }
 
     public Component getName() {
         return name;
     }
 
-    public List<Option<?>> getOptions() {
-        return options;
+    public List<OptionWidget<?>> getOptionWidgets() {
+        return optionWidgets;
     }
 }
