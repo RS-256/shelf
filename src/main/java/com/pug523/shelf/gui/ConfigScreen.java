@@ -60,6 +60,7 @@ public class ConfigScreen extends Screen {
     private static final int OPTION_HEADER_OFFSET_X = 10;
     private static final int OPTION_ITEM_START_OFFSET_Y = 15;
     private static final int OPTION_TEXT_OFFSET_X = 15;
+    private static final int RESET_BUTTON_WIDTH = 20;
 
     private static final int DESC_TEXT_OFFSET_X = 10;
     private static final int DESC_TEXT_OFFSET_Y = 15;
@@ -74,7 +75,6 @@ public class ConfigScreen extends Screen {
     private final List<Profile> profiles;
 
     private boolean dirty = false;
-    private final List<OptionWidget.Memento> undoSnapshots = new ArrayList<>();
     private int selectedProfileIndex = 0;
 
     // TabTree Architecture State Trackers
@@ -146,7 +146,6 @@ public class ConfigScreen extends Screen {
             refreshCurrentTabContext();
         }
 
-        captureConfigSnapshot();
         updateButtonStates();
     }
 
@@ -169,14 +168,12 @@ public class ConfigScreen extends Screen {
 
         if (selectedTabNode != null) {
             List<OptionGroup> aggregatedGroups = new ArrayList<>();
-
-            // Pass an empty string as the base path so the selected node's name isn't repeated in the header
             collectOptionGroupsRecursive(selectedTabNode, "", aggregatedGroups);
 
             for (OptionGroup group : aggregatedGroups) {
                 this.cachedOptionItems.add(RenderableItem.createHeader(group.getName()));
-                for (Option<?> option : group.getOptions()) {
-                    this.cachedOptionItems.add(RenderableItem.createOption(option));
+                for (OptionWidget<?> widget : group.getOptionWidgets()) {
+                    this.cachedOptionItems.add(RenderableItem.createOption(widget));
                 }
             }
         }
@@ -194,11 +191,10 @@ public class ConfigScreen extends Screen {
                     .append(group.getName().copy().withStyle(ChatFormatting.RESET, ChatFormatting.BOLD));
             }
 
-            destination.add(new OptionGroup(fullyQualifiedTitle, group.getOptions()));
+            destination.add(new OptionGroup(fullyQualifiedTitle, group.getOptionWidgets()));
         }
 
         for (TabNode child : node.getChildren()) {
-            // Only append to the path if it isn't the active selected node to prevent duplication.
             String nextPath = currentPath.isEmpty() ? child.getName().getString() : currentPath + " > " + child.getName().getString();
             collectOptionGroupsRecursive(child, nextPath, destination);
         }
@@ -335,25 +331,40 @@ public class ConfigScreen extends Screen {
                 //$$ gui.drawString(this.font, renderItem.text(), layout.tabAreaWidth + OPTION_HEADER_OFFSET_X, yPos + optionTextVertOffset, layoutConfig.colorTextMuted, false);
                 //#endif
             } else {
-                Option<?> option = renderItem.option();
-                int color = (i == focusedOptionIndex) ? layoutConfig.colorItemSelectedText : layoutConfig.colorItemUnselectedText;
+                // Define inline boundaries for option widget & reset buttons.
+                int resetBtnX = layout.descAreaX - RESET_BUTTON_WIDTH - 6;
+                int resetBtnY = yPos + (layoutConfig.optionItemHeight - 16) / 2;
+                int remainingWidgetWidth = layout.optionAreaWidth - RESET_BUTTON_WIDTH - 12;
 
-                // Handle interactive mouse state bounding over specific active rows
-                if (mouseX >= layout.tabAreaWidth && mouseX < layout.descAreaX && mouseY >= yPos && mouseY < yPos + layoutConfig.optionItemHeight) {
-                    gui.fill(layout.tabAreaWidth + 1, yPos, layout.descAreaX, yPos + layoutConfig.optionItemHeight, layoutConfig.colorItemHoverBackground);
-                }
-                if (i == focusedOptionIndex) {
-                    gui.fill(layout.tabAreaWidth + 1, yPos, layout.descAreaX, yPos + layoutConfig.optionItemHeight, layoutConfig.colorItemSelectedBackground);
+                // Safely handoff rendering pipeline control parameters to injected layout widget decoupling.
+                OptionWidget<?> widget = renderItem.widget();
+                Option<?> option = widget != null ? widget.getOption() : null;
+
+                if (widget != null && option != null) {
+                    int color = (i == focusedOptionIndex) ? layoutConfig.colorItemSelectedText : layoutConfig.colorItemUnselectedText;
+                    boolean isHovered = mouseX >= layout.tabAreaWidth && mouseX < layout.descAreaX && mouseY >= yPos && mouseY < yPos + layoutConfig.optionItemHeight;
+                    boolean isSelected = i == focusedOptionIndex;
+
+                    if (isHovered) {
+                        gui.fill(layout.tabAreaWidth + 1, yPos, layout.descAreaX, yPos + layoutConfig.optionItemHeight, layoutConfig.colorItemHoverBackground);
+                    }
+                    if (isSelected) {
+                        gui.fill(layout.tabAreaWidth + 1, yPos, layout.descAreaX, yPos + layoutConfig.optionItemHeight, layoutConfig.colorItemSelectedBackground);
+                    }
+
+                    gui.text(this.font, option.getName(), layout.tabAreaWidth + OPTION_TEXT_OFFSET_X, yPos + optionTextVertOffset, color, false);
+                    widget.render(this.font, gui, layout.tabAreaWidth, yPos, remainingWidgetWidth, layoutConfig.optionItemHeight, mouseX, mouseY);
                 }
 
-                // Render dynamic generic option display name label
-                gui.text(this.font, option.getName(), layout.tabAreaWidth + OPTION_TEXT_OFFSET_X, yPos + optionTextVertOffset, color, false);
+                boolean isResetHovered = mouseX >= resetBtnX && mouseX < resetBtnX + RESET_BUTTON_WIDTH && mouseY >= resetBtnY && mouseY < resetBtnY + 16;
+                boolean canReset = option != null && option.isPendingModifiedFromDefault();
 
-                // Safely handoff rendering pipeline control parameters to injected layout widget decoupling
-                OptionWidget widget = option.getWidget();
-                if (widget != null) {
-                    widget.render(this.font, gui, layout.tabAreaWidth, yPos, layout.optionAreaWidth, layoutConfig.optionItemHeight, mouseX, mouseY);
-                }
+                int resetColor = !canReset ? 0xFF555555 : (isResetHovered ? 0xFFFFFFFF : 0xFFAAAAAA);
+                gui.fill(resetBtnX, resetBtnY, resetBtnX + RESET_BUTTON_WIDTH, resetBtnY + 16, isResetHovered && canReset ? 0x40FFFFFF : 0x20000000);
+
+                int rTextX = resetBtnX + (RESET_BUTTON_WIDTH - this.font.width("R")) / 2;
+                int rTextY = resetBtnY + (16 - this.font.lineHeight) / 2;
+                gui.text(this.font, Component.literal("R"), rTextX, rTextY, resetColor, false);
             }
         }
         gui.disableScissor();
@@ -364,9 +375,9 @@ public class ConfigScreen extends Screen {
         if (focusedOptionIndex >= 0 && focusedOptionIndex < cachedOptionItems.size()) {
             RenderableItem activeSelection = cachedOptionItems.get(focusedOptionIndex);
 
-            if (!activeSelection.isHeader() && activeSelection.option() != null) {
-                Component name = activeSelection.option().getName();
-                Component description = activeSelection.option().getDescription();
+            if (!activeSelection.isHeader() && activeSelection.widget() != null) {
+                Component name = activeSelection.widget().getOption().getName();
+                Component description = activeSelection.widget().getOption().getDescription();
 
                 int startX = layout.descAreaX + DESC_TEXT_OFFSET_X;
                 int startY = layoutConfig.topBarHeight + DESC_TEXT_OFFSET_Y;
@@ -446,7 +457,8 @@ public class ConfigScreen extends Screen {
                     int yPos = layoutConfig.topBarHeight + OPTION_ITEM_START_OFFSET_Y + (i * layoutConfig.optionItemHeight) + extraPadding - (int) optionScrollY;
                     if (mouseY >= yPos && mouseY < yPos + layoutConfig.optionItemHeight) {
                         this.focusedOptionIndex = i;
-                        Option<?> option = item.option();
+                        OptionWidget<?> widget = item.widget();
+                        Option<?> option = widget != null ? widget.getOption() : null;
 
                         if (option != null) {
                             int resetBtnX = layout.descAreaX - RESET_BUTTON_WIDTH - 6;
@@ -454,15 +466,15 @@ public class ConfigScreen extends Screen {
 
                             // Click Collision Interception: Check if user targeted the row reset button specifically
                             if (mouseX >= resetBtnX && mouseX < resetBtnX + RESET_BUTTON_WIDTH && mouseY >= resetBtnY && mouseY < resetBtnY + 16) {
-                                if (option.isModified()) {
-                                    option.resetToDefault();
+                                if (option.isPendingModifiedFromDefault()) {
+                                    option.resetPendingToDefault();
                                     markDirty();
                                 }
                                 return true;
                             }
 
                             // Regular fallback: pass event downward into specific active Widget configuration inputs
-                            if (option.getWidget() != null && option.getWidget().mouseClicked(mouseX, mouseY, button)) {
+                            if (widget.mouseClicked(mouseX, mouseY, button)) {
                                 markDirty();
                                 return true;
                             }
@@ -488,8 +500,8 @@ public class ConfigScreen extends Screen {
     //$$ public boolean mouseReleased(double mouseX, double mouseY, int button) {
     //#endif
         for (RenderableItem item : cachedOptionItems) {
-            if (!item.isHeader() && item.option() != null && item.option().getWidget() != null) {
-                item.option().getWidget().mouseReleased(mouseX, mouseY, button);
+            if (!item.isHeader() && item.widget() != null) {
+                item.widget().mouseReleased(mouseX, mouseY, button);
             }
         }
         //#if MC >= 12109
@@ -525,8 +537,8 @@ public class ConfigScreen extends Screen {
     //#endif
         if (focusedOptionIndex >= 0 && focusedOptionIndex < cachedOptionItems.size()) {
             RenderableItem item = cachedOptionItems.get(focusedOptionIndex);
-            if (!item.isHeader() && item.option() != null && item.option().getWidget() != null) {
-                if (item.option().getWidget().mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+            if (!item.isHeader() && item.widget() != null) {
+                if (item.widget().mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
                     markDirty();
                     return true;
                 }
