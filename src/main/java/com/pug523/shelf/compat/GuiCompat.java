@@ -7,30 +7,37 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 //#else
-//@formatter:off
+// @formatter:off
     //$$ import net.minecraft.resources.ResourceLocation;
     //#if MC >= 12102
     //$$ import java.util.function.Function;
     //$$ import net.minecraft.client.renderer.RenderType;
-    //#else
+    //#elseif MC >= 11500
     //$$ import com.mojang.blaze3d.systems.RenderSystem;
     //#endif
-//@formatter:on
+// @formatter:on
 //#endif
 
 //#if MC >= 12000
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 //#else
 //$$ import com.mojang.blaze3d.platform.GlStateManager;
-//$$ import com.mojang.blaze3d.vertex.PoseStack;
+//$$ import net.minecraft.client.Minecraft;
+// @formatter:off
+    //#if MC >= 11600
+    //$$ import com.mojang.blaze3d.vertex.PoseStack;
+    //#endif
+    //#if MC >= 11500
+    //$$ import net.minecraft.client.renderer.MultiBufferSource;
+    //#endif
+// @formatter:on
 //$$ import net.minecraft.client.gui.GuiComponent;
-//$$ import net.minecraft.client.renderer.MultiBufferSource.BufferSource;
 //#endif
 
 public class GuiCompat {
     //#if MC >= 12000
     private final GuiGraphicsExtractor graphics;
-    //#else
+    //#elseif MC >= 11600
     //$$ private final PoseStack poseStack;
     //#endif
 
@@ -42,18 +49,24 @@ public class GuiCompat {
     public GuiGraphicsExtractor getGraphics() {
         return this.graphics;
     }
-    //#else
+
+    //#elseif MC >= 11600
     //$$ public GuiCompat(PoseStack poseStack) {
     //$$     this.poseStack = poseStack;
     //$$ }
     //$$ public PoseStack getPoseStack() { return this.poseStack; }
+    //#else
+    //$$ public GuiCompat() {
+    //$$ }
     //#endif
 
     public void fill(int minX, int minY, int maxX, int maxY, int color) {
         //#if MC >= 12000
         this.graphics.fill(minX, minY, maxX, maxY, color);
-        //#else
+        //#elseif MC >= 11600
         //$$ GuiComponent.fill(this.poseStack, minX, minY, maxX, maxY, color);
+        //#else
+        //$$ GuiComponent.fill(minX, minY, maxX, maxY, color);
         //#endif
     }
 
@@ -61,17 +74,29 @@ public class GuiCompat {
         //#if MC >= 12000
         this.graphics.text(font, text, x, y, color, shadow);
         //#else
-        //$$ BufferSource bufferSource = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
-        //@formatter:off
-            //#if MC >= 11900
-            //$$ font.drawInBatch(text, x, y, color, shadow, this.poseStack.last().pose(), bufferSource, Font.DisplayMode.NORMAL, 0, 15728880);
-            //#elseif MC >= 11700
-            //$$ font.drawInBatch(text, x, y, color, shadow, this.poseStack.last().pose(), bufferSource, false, 0, 15728880);
+        // @formatter:off
+            //#if MC >= 11500
+            //$$ MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+                //#if MC >= 11900
+                //$$ font.drawInBatch(text, x, y, color, shadow, this.poseStack.last().pose(), bufferSource, Font.DisplayMode.NORMAL, 0, 15728880);
+                //#elseif MC >= 11700
+                //$$ font.drawInBatch(text, x, y, color, shadow, this.poseStack.last().pose(), bufferSource, false, 0, 15728880);
+                //#elseif MC >= 11600
+                //$$ font.drawInBatch(text.getVisualOrderText(), (float)x, (float)y, color, shadow, this.poseStack.last().pose(), bufferSource, false, 0, 15728880);
+                //#else
+                //$$ com.mojang.math.Matrix4f identityMatrix = new com.mojang.math.Matrix4f();
+                //$$ identityMatrix.setIdentity();
+                //$$ font.drawInBatch(text.getString(), (float)x, (float)y, color, shadow, identityMatrix, bufferSource, false, 0, 15728880);
+                //#endif
+            //$$ bufferSource.endBatch();
             //#else
-            //$$ font.drawInBatch(text.getVisualOrderText(), (float)x, (float)y, color, shadow, this.poseStack.last().pose(), bufferSource, false, 0, 15728880);
+            //$$ if (shadow) {
+            //$$     font.drawShadow(text.getString(), (float)x, (float)y, color);
+            //$$ } else {
+            //$$     font.draw(text.getString(), (float)x, (float)y, color);
+            //$$ }
             //#endif
-        //$$ bufferSource.endBatch();
-        //@formatter:on
+        // @formatter:on
         //#endif
     }
 
@@ -84,8 +109,10 @@ public class GuiCompat {
         this.graphics.textWithWordWrap(font, text, x, y, width, color);
         //#elseif MC >= 11900
         //$$ font.drawWordWrap(this.poseStack, text, x, y, width, color | 0xFF000000);
-        //#else
+        //#elseif MC >= 11600
         //$$ font.drawWordWrap(text, x, y, width, color | 0xFF000000);
+        //#else
+        //$$ font.drawWordWrap(text.getString(), x, y, width, color | 0xFF000000);
         //#endif
     }
 
@@ -93,10 +120,23 @@ public class GuiCompat {
         //#if MC >= 12000
         this.graphics.enableScissor(minX, minY, maxX, maxY);
         //#else
-        //$$ int scale = (int) net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
-        //$$ int windowHeight = net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledHeight();
-        //$$ GlStateManager._enableScissorTest();
-        //$$ GlStateManager._scissorBox(minX * scale, (windowHeight - maxY) * scale, (maxX - minX) * scale, (maxY - minY) * scale);
+        // @formatter:off
+            //#if MC >= 11500
+            //$$ int scale = (int) Minecraft.getInstance().getWindow().getGuiScale();
+            //$$ int windowHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+            //#else
+            //$$ int scale = (int) Minecraft.getInstance().window.getGuiScale();
+            //$$ int windowHeight = Minecraft.getInstance().window.getGuiScaledHeight();
+            //#endif
+
+            //#if MC >= 11600
+            //$$ GlStateManager._enableScissorTest();
+            //$$ GlStateManager._scissorBox(minX * scale, (windowHeight - maxY) * scale, (maxX - minX) * scale, (maxY - minY) * scale);
+            //#else
+            //$$ org.lwjgl.opengl.GL11.glEnable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
+            //$$ org.lwjgl.opengl.GL11.glScissor(minX * scale, (windowHeight - maxY) * scale, (maxX - minX) * scale, (maxY - minY) * scale);
+            //#endif
+        // @formatter:on
         //#endif
     }
 
@@ -104,7 +144,13 @@ public class GuiCompat {
         //#if MC >= 12000
         this.graphics.disableScissor();
         //#else
+        // @formatter:off
+        //#if MC >= 11600
         //$$ GlStateManager._disableScissorTest();
+        //#else
+        //$$ org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL11.GL_SCISSOR_TEST);
+        //#endif
+        // @formatter:on
         //#endif
     }
 
@@ -126,23 +172,27 @@ public class GuiCompat {
     //$$ }
     //#else
     //$$ public void blit(net.minecraft.resources.ResourceLocation texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, float r, float g, float b, float alpha) {
-    //@formatter:off
+    // @formatter:off
         //#if MC >= 11700
         //$$ RenderSystem.setShaderTexture(0, texture);
         //$$ RenderSystem.setShaderColor(r, g, b, alpha);
         //#else
-        //$$ net.minecraft.client.Minecraft.getInstance().getTextureManager().bind(texture);
+        //$$ Minecraft.getInstance().getTextureManager().bind(texture);
         //$$ org.lwjgl.opengl.GL11.glColor4f(r, g, b, alpha);
         //#endif
-    //@formatter:on
-    //$$     GuiComponent.blit(this.poseStack, x, y, 0, u, v, width, height, textureWidth, textureHeight);
-    //@formatter:off
+
+        //#if MC >= 11600
+        //$$ GuiComponent.blit(this.poseStack, x, y, 0, u, v, width, height, textureWidth, textureHeight);
+        //#else
+        //$$ GuiComponent.blit(x, y, 0, u, v, width, height, textureWidth, textureHeight);
+        //#endif
+
         //#if MC >= 11700
         //$$ RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
         //#else
         //$$ org.lwjgl.opengl.GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         //#endif
-    //@formatter:on
+    // @formatter:on
     //$$ }
     //#endif
 }

@@ -1,12 +1,11 @@
 package com.pug523.shelf.gui.controller;
 
-import java.util.List;
-
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.gui.model.OptionContext;
 
 public final class OptionContextController {
 
-    private OptionContext context = new OptionContext(List.of());
+    private OptionContext context = new OptionContext(JavaCompat.listOf());
 
     public OptionContext getContext() {
         return context;

@@ -5,6 +5,7 @@ import java.util.List;
 import org.jspecify.annotations.NonNull;
 
 import com.pug523.shelf.compat.GuiCompat;
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.config.Profile;
 import com.pug523.shelf.gui.builder.OptionContextBuilder;
 import com.pug523.shelf.gui.controller.ConfigChangeController;
@@ -23,7 +24,7 @@ import com.pug523.shelf.gui.widget.ClickableWidget;
 import net.minecraft.client.gui.Font;
 //#if MC >= 12000
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-//#else
+//#elseif MC >= 11500
 //$$ import com.mojang.blaze3d.vertex.PoseStack;
 //#endif
 import net.minecraft.client.gui.screens.Screen;
@@ -72,7 +73,7 @@ public class ConfigScreen extends Screen {
         this.applyButton = new ActionButtonWidget(TextUtil.guiText("apply"), btn -> this.changeController.apply());
         this.doneButton = new ActionButtonWidget(TextUtil.guiText("done"), btn -> this.close());
 
-        this.footerButtons = List.of(undoButton, applyButton, doneButton);
+        this.footerButtons = JavaCompat.listOf(undoButton, applyButton, doneButton);
     }
 
     private void close() {
@@ -116,9 +117,9 @@ public class ConfigScreen extends Screen {
         return footerButtons;
     }
 
+    @Override
     // @formatter:off
     //#if MC >= 12106
-    @Override
     public void extractRenderState(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
         updateButtonStates();
         GuiCompat compat = new GuiCompat(gui);
@@ -126,20 +127,25 @@ public class ConfigScreen extends Screen {
         super.extractRenderState(gui, mouseX, mouseY, partialTick);
     }
     //#elseif MC >= 12000
-    //$$ @Override
     //$$ public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
     //$$    super.render(gui, mouseX, mouseY, partialTick);
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(gui);
     //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
     //$$ }
-    //#else
-    //$$ @Override
+    //#elseif MC >= 11600
     //$$ public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(poseStack);
     //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
     //$$    super.render(poseStack, mouseX, mouseY, partialTick);
+    //$$ }
+    //#else
+    //$$ public void render(int mouseX, int mouseY, float partialTick) {
+    //$$    updateButtonStates();
+    //$$    GuiCompat compat = new GuiCompat();
+    //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
+    //$$    super.render(mouseX, mouseY, partialTick);
     //$$ }
     //#endif
     // @formatter:on

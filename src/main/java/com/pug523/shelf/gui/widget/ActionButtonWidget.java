@@ -9,6 +9,7 @@ import com.pug523.shelf.gui.input.InputUtil;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.sound.SoundUtil;
+import com.pug523.shelf.gui.text.TextUtil;
 
 public class ActionButtonWidget implements ClickableWidget {
     private final Component label;
@@ -52,7 +53,7 @@ public class ActionButtonWidget implements ClickableWidget {
         gui.fill(x, y, x + width, y + height, cfg.colorButtonBorder);
         gui.fill(x + 1, y + 1, x + width - 1, y + height - 1, backgroundColor);
 
-        int textWidth = font.width(this.label);
+        int textWidth = TextUtil.width(font, this.label);
         int textX = x + (width - textWidth) / 2;
         int textY = y + (height - font.lineHeight) / 2 + 1;
 

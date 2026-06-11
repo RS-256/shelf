@@ -23,7 +23,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.RenderPipelines;
 //#elseif MC >= 12102
 //$$ import net.minecraft.client.renderer.RenderType;
-//#else
+//#elseif MC >= 11500
 //$$ import com.mojang.blaze3d.systems.RenderSystem;
 //#endif
 import net.minecraft.network.chat.Component;

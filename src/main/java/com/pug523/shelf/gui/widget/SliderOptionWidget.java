@@ -9,6 +9,7 @@ import com.pug523.shelf.gui.input.InputUtil;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.renderer.RenderUtil;
+import com.pug523.shelf.gui.text.TextUtil;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
@@ -87,7 +88,7 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
         // Text
         String valueText = formatValue(currentValue);
         Component textComponent = ComponentCompat.literal(valueText);
-        int textWidth = font.width(textComponent);
+        int textWidth = TextUtil.width(font, textComponent);
         int textX = sliderX - textWidth - cfg.sliderTextPadding;
         int textY = y + (height - font.lineHeight) / 2 + 1;
 
