@@ -1,0 +1,39 @@
+package com.pug523.shelf;
+
+import com.pug523.shelf.compat.ComponentCompat;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+
+// Only for Shelf mod config screen.
+// Library common text handling is in com.pug523.shelf.gui.text.TextUtil.class.
+public class ShelfTextUtil {
+    public static final String MOD_LANG_KEY_PREFIX = Shelf.MOD_ID + ".mod.";
+    public static final String CONFIG_LANG_KEY_PREFIX = MOD_LANG_KEY_PREFIX + "config.";
+    public static final String CONFIG_CATEGORY_LANG_KEY_PREFIX = CONFIG_LANG_KEY_PREFIX + "category.";
+    public static final String CONFIG_OPTION_LANG_KEY_PREFIX = CONFIG_LANG_KEY_PREFIX + "option.";
+
+    public static final String confKey(String key) {
+        return CONFIG_LANG_KEY_PREFIX + key;
+    }
+
+    public static final Component confText(String key, ChatFormatting... formatting) {
+        return ComponentCompat.translatable(confKey(key)).withStyle(formatting);
+    }
+
+    public static final String categoryKey(String key) {
+        return CONFIG_CATEGORY_LANG_KEY_PREFIX + key;
+    }
+
+    public static final Component categoryText(String key, ChatFormatting... formatting) {
+        return ComponentCompat.translatable(categoryKey(key)).withStyle(formatting);
+    }
+
+    public static final String optKey(String key) {
+        return CONFIG_OPTION_LANG_KEY_PREFIX + key;
+    }
+
+    public static final Component optText(String key, ChatFormatting... formatting) {
+        return ComponentCompat.translatable(optKey(key)).withStyle(formatting);
+    }
+}
