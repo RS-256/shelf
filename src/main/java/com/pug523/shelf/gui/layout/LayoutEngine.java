@@ -1,21 +1,24 @@
-package com.pug523.shelf.gui;
+package com.pug523.shelf.gui.layout;
 
-public class ScreenLayout {
-    // private final int width;
-    private final int height;
+public class LayoutEngine {
     private final LayoutConfig config;
 
-    // Derived layout boundaries
-    public final int tabAreaWidth;
-    public final int optionAreaWidth;
-    public final int descAreaX;
-    public final int mainContentHeight;
+    private int width;
+    private int height;
 
-    public ScreenLayout(int width, int height, LayoutConfig config) {
-        // this.width = width;
-        this.height = height;
+    public int tabAreaWidth;
+    public int optionAreaWidth;
+    public int descAreaX;
+    public int mainContentHeight;
+
+    public LayoutEngine(LayoutConfig config) {
         this.config = config;
 
+    }
+
+    public void rebuild(int width, int height) {
+        this.width = width;
+        this.height = height;
         this.tabAreaWidth = (int) (width * config.tabAreaWidthPercent);
         this.optionAreaWidth = (int) (width * config.optionAreaWidthPercent);
         this.descAreaX = this.tabAreaWidth + this.optionAreaWidth;
@@ -32,5 +35,17 @@ public class ScreenLayout {
 
     public boolean isMouseOverOptions(double mouseX) {
         return mouseX >= tabAreaWidth && mouseX < descAreaX;
+    }
+
+    public LayoutConfig getConfig() {
+        return config;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 }

@@ -1,9 +1,9 @@
-package com.pug523.shelf.gui;
+package com.pug523.shelf.gui.renderer;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import com.pug523.shelf.compat.GuiCompat;
 
 public class RenderUtil {
-    public static void drawDynamicCircle(GuiGraphicsExtractor gui, int centerX, int centerY, int radius, int color) {
+    public static void drawDynamicCircle(GuiCompat gui, int centerX, int centerY, int radius, int color) {
         for (int y = -radius; y <= radius; y++) {
             for (int x = -radius; x <= radius; x++) {
                 // Check if the current pixel is inside the circle boundary.
@@ -18,7 +18,7 @@ public class RenderUtil {
         }
     }
 
-    public static void drawDynamicCapsule(GuiGraphicsExtractor gui, int x, int y, int width, int height, int color) {
+    public static void drawDynamicCapsule(GuiCompat gui, int x, int y, int width, int height, int color) {
         int radius = height / 2;
 
         float leftCenterX = x + radius;
@@ -41,12 +41,14 @@ public class RenderUtil {
                     // Left circle cap math
                     float dx = sampleX - leftCenterX;
                     float dy = sampleY - centerY;
-                    if ((dx * dx) + (dy * dy) < maxDistanceSq) inside = true;
+                    if ((dx * dx) + (dy * dy) < maxDistanceSq)
+                        inside = true;
                 } else if (sampleX > rightCenterX) {
                     // Right circle cap math
                     float dx = sampleX - rightCenterX;
                     float dy = sampleY - centerY;
-                    if ((dx * dx) + (dy * dy) < maxDistanceSq) inside = true;
+                    if ((dx * dx) + (dy * dy) < maxDistanceSq)
+                        inside = true;
                 } else {
                     // Middle body rectangle math
                     inside = true;
@@ -59,13 +61,13 @@ public class RenderUtil {
         }
     }
 
-    public static void renderDownwardArrow(GuiGraphicsExtractor gui, int startX, int startY, int color) {
+    public static void renderDownwardArrow(GuiCompat gui, int startX, int startY, int color) {
         gui.fill(startX, startY, startX + 5, startY + 1, color);
         gui.fill(startX + 1, startY + 1, startX + 4, startY + 2, color);
         gui.fill(startX + 2, startY + 2, startX + 3, startY + 3, color);
     }
 
-    public static void renderRightwardArrow(GuiGraphicsExtractor gui, int startX, int startY, int color) {
+    public static void renderRightwardArrow(GuiCompat gui, int startX, int startY, int color) {
         gui.fill(startX, startY, startX + 1, startY + 5, color);
         gui.fill(startX + 1, startY + 1, startX + 2, startY + 4, color);
         gui.fill(startX + 2, startY + 2, startX + 3, startY + 3, color);
