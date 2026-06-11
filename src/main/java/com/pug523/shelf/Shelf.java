@@ -15,24 +15,28 @@ import org.slf4j.Logger;
 //#endif
 
 public class Shelf implements ClientModInitializer {
-	public static final String MOD_ID = "shelf";
-	public static final String MOD_NAME = "Shelf";
-	public static String VERSION = "unknown";
+    public static final String MOD_ID = "shelf";
+    public static final String MOD_NAME = "Shelf";
+    public static String VERSION = "unknown";
 
+    // @formatter:off
     public static final Logger LOGGER =
         //#if MC >= 11802
         LogUtils.getLogger();
         //#else
         //$$ LogManager.getLogger();
         //#endif
+    // @formatter:on
 
     public static ConfigManager<ShelfConfig> CONFIG = null;
 
     @Override
     public void onInitializeClient() {
-        VERSION = FabricLoader.getInstance().getModContainer(MOD_ID).orElseThrow(RuntimeException::new).getMetadata().getVersion().getFriendlyString();
+        VERSION = FabricLoader.getInstance().getModContainer(MOD_ID).orElseThrow(RuntimeException::new).getMetadata()
+                .getVersion().getFriendlyString();
 
-        CONFIG = new TomlConfigManager<ShelfConfig>(ShelfConfig.class, Shelf.MOD_ID, "config.toml", ShelfConfig::new);
+        CONFIG = new TomlConfigManager<ShelfConfig>(ShelfConfig.class, Shelf.MOD_ID, "config.toml",
+                ShelfConfig::createDefault);
         CONFIG.load();
     }
 }

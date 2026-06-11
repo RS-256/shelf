@@ -1,15 +1,18 @@
 package com.pug523.shelf;
 
 import com.pug523.shelf.gui.layout.LayoutConfig;
+import java.io.Serializable;
 
-public class ShelfConfig {
+public class ShelfConfig implements Serializable {
     public boolean autoRestock = false;
     public int fov = 90;
     public int renderDistance = 32;
     public double volume = 100.0d;
     public float sensitivity = 1.0f;
     public boolean vsync = false;
-    public LayoutConfig layoutConfig = LayoutConfig.defaultConfig;
+    public LayoutConfig layoutConfig = LayoutConfig.createDefault();
 
-    public transient static final ShelfConfig defaultConfig = new ShelfConfig();
+    public static final ShelfConfig createDefault() {
+        return new ShelfConfig();
+    }
 }
