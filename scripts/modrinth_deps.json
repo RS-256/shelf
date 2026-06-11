@@ -1,3 +1,4 @@
 {
-  "modmenu": "modmenu_version"
+  "modmenu": "modmenu_version",
+  "fabric-api": "fabric_api_version"
 }
