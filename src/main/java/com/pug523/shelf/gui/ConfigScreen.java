@@ -7,7 +7,6 @@ import org.jspecify.annotations.NonNull;
 import com.pug523.shelf.compat.GuiCompat;
 import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.config.Profile;
-import com.pug523.shelf.gui.builder.OptionContextBuilder;
 import com.pug523.shelf.gui.controller.ConfigChangeController;
 import com.pug523.shelf.gui.controller.OptionContextController;
 import com.pug523.shelf.gui.controller.OptionFocusController;
@@ -16,6 +15,7 @@ import com.pug523.shelf.gui.controller.TabTreeController;
 import com.pug523.shelf.gui.input.ConfigInputHandler;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
+import com.pug523.shelf.gui.model.OptionContextBuilder;
 import com.pug523.shelf.gui.renderer.ConfigScreenRenderer;
 import com.pug523.shelf.gui.text.TextUtil;
 import com.pug523.shelf.gui.widget.ActionButtonWidget;
@@ -124,28 +124,35 @@ public class ConfigScreen extends Screen {
         updateButtonStates();
         GuiCompat compat = new GuiCompat(gui);
         renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
-        super.extractRenderState(gui, mouseX, mouseY, partialTick);
+        // super.extractRenderState(gui, mouseX, mouseY, partialTick);
     }
     //#elseif MC >= 12000
     //$$ public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
-    //$$    super.render(gui, mouseX, mouseY, partialTick);
+        //#if MC >= 12002
+        //$$ this.renderBackground(gui, mouseX, mouseY, partialTick);
+        //#else
+        //$$ this.renderBackground(gui);
+        //#endif
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(gui);
     //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
+    //$$    // super.render(gui, mouseX, mouseY, partialTick);
     //$$ }
     //#elseif MC >= 11600
     //$$ public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+    //$$    this.renderBackground(poseStack);
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(poseStack);
     //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
-    //$$    super.render(poseStack, mouseX, mouseY, partialTick);
+    //$$    // super.render(poseStack, mouseX, mouseY, partialTick);
     //$$ }
     //#else
     //$$ public void render(int mouseX, int mouseY, float partialTick) {
+    //$$    this.renderBackground();
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat();
     //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
-    //$$    super.render(mouseX, mouseY, partialTick);
+    //$$    // super.render(mouseX, mouseY, partialTick);
     //$$ }
     //#endif
     // @formatter:on
