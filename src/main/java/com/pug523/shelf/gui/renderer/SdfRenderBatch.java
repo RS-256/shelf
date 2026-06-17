@@ -26,15 +26,14 @@ public class SdfRenderBatch {
     private float currentRadius = -1;
 
     public SdfRenderBatch() {
-        // Constructor now ONLY allocates client-side memory.
-        // It does NOT touch any global OpenGL bind states, making class loading 100% safe.
         int maxVertices = MAX_QUADS * VERTICES_PER_QUAD;
         this.buffer = BufferUtils.createFloatBuffer(maxVertices * VERTEX_SIZE);
     }
 
     private void ensureInitialized() {
-        if (initialized)
+        if (initialized) {
             return;
+        }
 
         int maxVertices = MAX_QUADS * VERTICES_PER_QUAD;
         long totalBufferSize = (long) maxVertices * VERTEX_SIZE * Float.BYTES;

@@ -7,6 +7,7 @@ import com.pug523.shelf.gui.shader.ShaderManager;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -36,9 +37,10 @@ public class RenderUtil {
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
 
         GL11.glEnable(GL11.GL_LINE_SMOOTH);
-        GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
-        GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
-        GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
+        // GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
+        // GL11.glEnable(GL11.GL_POLYGON_SMOOTH);
+        // GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
+        GL14.glEnable(GL14.GL_MULTISAMPLE);
 
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -70,7 +72,7 @@ public class RenderUtil {
         matrixBuffer.put(3, 0.0f);
 
         matrixBuffer.put(4, 0.0f);
-        matrixBuffer.put(5, -2.0f / height); // Inverted Y-axis
+        matrixBuffer.put(5, -2.0f / height);
         matrixBuffer.put(6, 0.0f);
         matrixBuffer.put(7, 0.0f);
 
@@ -101,18 +103,32 @@ public class RenderUtil {
         batch.queueQuad(x, y, width, height, radius, r, g, b, a);
     }
 
-    public static void drawCircle(GuiCompat gui, int centerX, int centerY, int radius, int color) {
+    public static void drawCachedVao(int vaoId, int vertexCount) {
+        GL30.glBindVertexArray(vaoId);
+        for (int i = 0; i < vertexCount; i += 4) {
+            GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, i, 4);
+        }
+        GL30.glBindVertexArray(0);
+    }
+
+    public static void drawCircle(GuiCompat gui, int centerX, int centerY, int radius, int color, int scissorX,
+            int scissorY, int scissorMaxX, int scissorMaxY) {
         float diameter = radius * 2f;
-        SdfRenderQueue.queueSdfQuad(centerX - radius, centerY - radius, diameter, diameter, radius, color, true);
+        SdfRenderQueue.queueSdfQuad(centerX - radius, centerY - radius, diameter, diameter, radius, color, true, true,
+                scissorX, scissorY, scissorMaxX, scissorMaxY);
     }
 
-    public static void drawCapsule(GuiCompat gui, int x, int y, int width, int height, int color) {
+    public static void drawCapsule(GuiCompat gui, int x, int y, int width, int height, int color, int scissorX,
+            int scissorY, int scissorMaxX, int scissorMaxY) {
         float radius = height / 2.0f;
-        SdfRenderQueue.queueSdfQuad(x, y, width, height, radius, color, true);
+        SdfRenderQueue.queueSdfQuad(x, y, width, height, radius, color, true, true, scissorX, scissorY, scissorMaxX,
+                scissorMaxY);
     }
 
-    public static void drawRoundedRect(GuiCompat gui, int x, int y, int width, int height, float radius, int color) {
-        SdfRenderQueue.queueSdfQuad(x, y, width, height, radius, color, true);
+    public static void drawRoundedRect(GuiCompat gui, int x, int y, int width, int height, float radius, int color,
+            int scissorX, int scissorY, int scissorMaxX, int scissorMaxY) {
+        SdfRenderQueue.queueSdfQuad(x, y, width, height, radius, color, true, true, scissorX, scissorY, scissorMaxX,
+                scissorMaxY);
     }
 
     public static void endRender() {

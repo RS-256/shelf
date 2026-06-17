@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.pug523.shelf.compat.GuiCompat;
 import com.pug523.shelf.compat.IdentifierCompat;
+import com.pug523.shelf.compat.ProfilerCompat;
 import com.pug523.shelf.config.Option;
 import com.pug523.shelf.gui.ConfigScreen;
 import com.pug523.shelf.gui.TabNode;
@@ -15,7 +16,7 @@ import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.model.OptionContext;
 import com.pug523.shelf.gui.model.RenderableItem;
 import com.pug523.shelf.gui.text.TextUtil;
-import com.pug523.shelf.gui.widget.ClickableWidget;
+import com.pug523.shelf.gui.widget.IClickableWidget;
 import com.pug523.shelf.gui.widget.OptionWidget;
 
 import net.minecraft.ChatFormatting;
@@ -29,6 +30,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 public class ConfigScreenRenderer {
     private static final Identifier RESET_BUTTON_TEXTURE = IdentifierCompat.of("shelf",
@@ -36,6 +38,9 @@ public class ConfigScreenRenderer {
 
     public void render(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, int mouseX, int mouseY,
             TabTreeController tabs, OptionContext context, OptionFocusController focus, ScrollController scrolls) {
+        ProfilerFiller profiler = ProfilerCompat.getProfiler();
+        profiler.push("shelf_config_screen_render");
+
         LayoutConfig cfg = layout.getConfig();
 
         SdfRenderQueue.startBuffering();
@@ -56,6 +61,8 @@ public class ConfigScreenRenderer {
         //#if MC <= 12103
         //$$ SdfRenderQueue.flushAll();
         //#endif
+
+        profiler.pop();
     }
 
     private void base(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg) {
@@ -69,7 +76,7 @@ public class ConfigScreenRenderer {
     }
 
     private void footer(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg,
-            List<ClickableWidget> footerButtons, int mouseX, int mouseY) {
+            List<IClickableWidget> footerButtons, int mouseX, int mouseY) {
         gui.fill(0, screen.height - cfg.bottomBarHeight, screen.width, screen.height, cfg.colorFooterBackground);
 
         if (footerButtons == null || footerButtons.isEmpty())
@@ -85,8 +92,9 @@ public class ConfigScreenRenderer {
         int buttonY = screen.height - cfg.bottomBarHeight + (cfg.bottomBarHeight - buttonHeight) / 2;
 
         for (int i = footerButtons.size() - 1; i >= 0; i--) {
-            ClickableWidget button = footerButtons.get(i);
-            button.render(screen.getFont(), gui, layout, currentX, buttonY, buttonWidth, buttonHeight, mouseX, mouseY);
+            IClickableWidget button = footerButtons.get(i);
+            button.render(screen.getFont(), gui, layout, currentX, buttonY, buttonWidth, buttonHeight, mouseX, mouseY,
+                    currentX, buttonY, buttonWidth, buttonHeight);
             currentX -= (buttonWidth + spacing);
         }
     }
@@ -106,10 +114,15 @@ public class ConfigScreenRenderer {
             ScrollController scrolls) {
         List<TabNode> flat = tabs.getFlat();
 
-        gui.enableScissor(0, cfg.topBarHeight + 1, layout.tabAreaWidth, screen.height - cfg.bottomBarHeight);
+        int scissorX = 0;
+        int scissorY = cfg.topBarHeight + 1;
+        int scissorMaxX = layout.tabAreaWidth;
+        int scissorMaxY = screen.height;
+        int scissorWidth = scissorMaxX - scissorX;
+        int scissorHeight = scissorMaxY - scissorY;
+        gui.enableScissor(scissorX, scissorY, scissorWidth, scissorHeight);
 
         int tabHeight = cfg.tabItemHeight;
-        int contentHeight = flat.size() * tabHeight;
         double scroll = scrolls.getTabScroll();
         int textOffset = (tabHeight - screen.getFont().lineHeight) / 2;
 
@@ -117,6 +130,11 @@ public class ConfigScreenRenderer {
             TabNode node = flat.get(i);
             int x = cfg.textPaddingX + (node.getDepth() * cfg.tabTreeIndentation);
             int y = cfg.topBarHeight + cfg.tabItemStartOffsetY + (i * tabHeight) - (int) scroll;
+
+            if (y + tabHeight < scissorY || y > scissorMaxY) {
+                continue;
+            }
+
             int centerY = y + tabHeight / 2 + 1;
 
             int color = (node == tabs.getSelected()) ? cfg.colorItemSelectedText : cfg.colorItemUnselectedText;
@@ -140,29 +158,37 @@ public class ConfigScreenRenderer {
         gui.disableScissor();
 
         drawScrollBar(gui, layout.tabAreaWidth - cfg.scrollbarWidth, cfg.topBarHeight + 1, layout.mainContentHeight - 1,
-                scroll, contentHeight + cfg.tabItemStartOffsetY, cfg);
+                scroll, tabs.totalHeight(cfg), cfg);
     }
 
     private void options(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg,
             List<RenderableItem> items, OptionFocusController focus, ScrollController scrolls, int mouseX, int mouseY) {
-        gui.enableScissor(layout.tabAreaWidth + 1, cfg.topBarHeight + 1, layout.descAreaX,
-                screen.height - cfg.bottomBarHeight);
+        int scissorX = layout.tabAreaWidth + 1;
+        int scissorY = cfg.topBarHeight + 1;
+        int scissorMaxX = layout.descAreaX - layout.getConfig().scrollbarWidth;
+        int scissorMaxY = screen.height - cfg.bottomBarHeight;
+        gui.enableScissor(scissorX, scissorY, scissorMaxX, scissorMaxY);
 
+        int x = layout.tabAreaWidth;
+        int optionWidth = scissorMaxX - scissorX;
         int optionHeight = cfg.optionItemHeight;
 
         int extraPadding = 0;
-        int headerOffset = 12;
 
-        int contentHeight = calculateOptionHeight(items, optionHeight, headerOffset);
+        int contentHeight = calculateOptionHeight(items, optionHeight, cfg.optionHeaderOffsetY);
         double scroll = scrolls.getOptionScroll();
 
         for (int i = 0; i < items.size(); i++) {
             RenderableItem item = items.get(i);
             if (item.isHeader() && i > 0) {
-                extraPadding += headerOffset;
+                extraPadding += cfg.optionHeaderOffsetY;
             }
 
             int y = cfg.topBarHeight + cfg.optionItemStartOffsetY + (i * optionHeight) + extraPadding - (int) scroll;
+
+            if (y + optionHeight < scissorY || y > scissorMaxY) {
+                continue;
+            }
 
             if (item.isHeader()) {
                 gui.text(screen.getFont(), item.text(), layout.tabAreaWidth + cfg.optionHeaderOffsetX,
@@ -176,14 +202,14 @@ public class ConfigScreenRenderer {
                 continue;
 
             boolean selected = focus.getFocused() == i;
-            boolean hovered = mouseX >= layout.tabAreaWidth && mouseX < layout.descAreaX && mouseY >= y
+            boolean hovered = mouseX >= scissorX && mouseX < x + optionWidth && mouseY >= y
                     && mouseY < y + optionHeight;
 
             if (hovered) {
-                gui.fill(layout.tabAreaWidth + 1, y, layout.descAreaX, y + optionHeight, cfg.colorItemHoverBackground);
+                gui.fill(layout.tabAreaWidth + 1, y, x + optionWidth, y + optionHeight, cfg.colorItemHoverBackground);
             }
             if (selected) {
-                gui.fill(layout.tabAreaWidth + 1, y, layout.descAreaX, y + optionHeight,
+                gui.fill(layout.tabAreaWidth + 1, y, x + optionWidth, y + optionHeight,
                         cfg.colorItemSelectedBackground);
             }
 
@@ -193,8 +219,8 @@ public class ConfigScreenRenderer {
             int textY = y + (optionHeight - screen.getFont().lineHeight) / 2 + 1;
             gui.text(screen.getFont(), option.getName(), textX, textY, color, false);
 
-            widget.render(screen.getFont(), gui, layout, layout.tabAreaWidth, y,
-                    layout.optionAreaWidth - cfg.resetButtonWidth - 12, optionHeight, mouseX, mouseY);
+            widget.render(screen.getFont(), gui, layout, x, y, layout.optionAreaWidth - cfg.resetButtonWidth - 12,
+                    optionHeight, mouseX, mouseY, scissorX, scissorY, scissorMaxX, scissorMaxY);
 
             drawResetButton(gui, screen, layout, cfg, option, mouseX, mouseY, y);
         }
@@ -296,10 +322,14 @@ public class ConfigScreenRenderer {
 
     private void drawScrollBar(GuiCompat gui, int x, int y, int height, double scroll, int contentHeight,
             LayoutConfig cfg) {
-        if (contentHeight <= height)
+        if (contentHeight <= height) {
             return;
+        }
 
-        int barHeight = Math.max(cfg.scrollbarMinHeight, (int) ((height / (float) contentHeight) * height));
+        int maxHeight = (int) (height * cfg.scrollbarMaxHeightPercent);
+        int barHeight = (int) ((height / (float) contentHeight) * height);
+        barHeight = Mth.clamp(barHeight, cfg.scrollbarMinHeight, maxHeight);
+
         int maxScroll = contentHeight - height;
         int barY = y + (int) ((scroll / maxScroll) * (height - barHeight));
 
