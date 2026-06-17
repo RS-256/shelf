@@ -15,6 +15,8 @@ import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.model.OptionContext;
 import com.pug523.shelf.gui.model.RenderableItem;
+import com.pug523.shelf.gui.overlay.OverlayController;
+import com.pug523.shelf.gui.overlay.ScreenOverlay;
 import com.pug523.shelf.gui.sound.SoundUtil;
 import com.pug523.shelf.gui.widget.OptionWidget;
 
@@ -27,27 +29,33 @@ public final class ConfigInputHandler {
     private final OptionContextController options;
     private final OptionFocusController focus;
     private final ConfigChangeController changes;
+    private final OverlayController overlays;
 
     private boolean isDraggingTabScrollBar = false;
     private boolean isDraggingOptionScrollBar = false;
 
     public ConfigInputHandler(TabTreeController tabs, ScrollController scrolls, OptionContextController options,
-            OptionFocusController focus, ConfigChangeController changes) {
+            OptionFocusController focus, ConfigChangeController changes, OverlayController overlays) {
         this.tabs = tabs;
         this.scrolls = scrolls;
         this.options = options;
         this.focus = focus;
         this.changes = changes;
+        this.overlays = overlays;
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers, LayoutEngine layout) {
-
         if (button != InputUtil.LEFT_MOUSE_BUTTON) {
             return false;
         }
 
         if (!layout.isWithinContentArea(mouseY)) {
             return false;
+        }
+
+        if (overlays.hasActiveOverlay()) {
+            ScreenOverlay overlay = overlays.getActiveOverlay();
+            return overlay.mouseClicked(mouseX, mouseY, button);
         }
 
         LayoutConfig cfg = layout.getConfig();
@@ -144,6 +152,12 @@ public final class ConfigInputHandler {
     }
 
     public void mouseReleased(double mouseX, double mouseY, int button) {
+        if (overlays.hasActiveOverlay()) {
+            ScreenOverlay overlay = overlays.getActiveOverlay();
+            overlay.mouseReleased(mouseX, mouseY, button);
+            return;
+        }
+
         if (button == InputUtil.LEFT_MOUSE_BUTTON) {
             isDraggingTabScrollBar = false;
             isDraggingOptionScrollBar = false;
@@ -262,6 +276,11 @@ public final class ConfigInputHandler {
     }
 
     public boolean keyPressed(int keycode, int scancode, int modifiers, LayoutEngine layout) {
+        if (overlays.hasActiveOverlay()) {
+            ScreenOverlay overlay = overlays.getActiveOverlay();
+            return overlay.keyPressed(keycode, scancode, modifiers);
+        }
+
         OptionContext context = options.getContext();
         if (context == null) {
             return false;
@@ -334,6 +353,11 @@ public final class ConfigInputHandler {
     }
 
     public boolean charTyped(int codepoint, int modifiers) {
+        if (overlays.hasActiveOverlay()) {
+            ScreenOverlay overlay = overlays.getActiveOverlay();
+            return overlay.charTyped(codepoint, modifiers);
+        }
+
         OptionContext context = options.getContext();
         if (context == null) {
             return false;
@@ -392,9 +416,7 @@ public final class ConfigInputHandler {
     }
 
     private boolean handleOptionClick(double mouseX, double mouseY, int modifiers, LayoutEngine layout) {
-
         OptionContext context = options.getContext();
-
         if (context == null) {
             return false;
         }
@@ -402,7 +424,6 @@ public final class ConfigInputHandler {
         List<RenderableItem> items = context.items();
 
         int extraPadding = 0;
-
         for (int i = 0; i < items.size(); i++) {
             RenderableItem item = items.get(i);
 
@@ -416,10 +437,7 @@ public final class ConfigInputHandler {
             int yPos = layout.getConfig().topBarHeight + layout.getConfig().optionItemStartOffsetY
                     + i * layout.getConfig().optionItemHeight + extraPadding - (int) scrolls.getOptionScroll();
 
-            if (mouseY < yPos) {
-                continue;
-            }
-            if (mouseY >= yPos + layout.getConfig().optionItemHeight) {
+            if (mouseY < yPos || mouseY >= yPos + layout.getConfig().optionItemHeight) {
                 continue;
             }
 

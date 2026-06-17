@@ -17,6 +17,8 @@ import com.pug523.shelf.gui.input.ConfigInputHandler;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.model.OptionContextBuilder;
+import com.pug523.shelf.gui.overlay.OverlayController;
+import com.pug523.shelf.gui.overlay.ScreenOverlay;
 import com.pug523.shelf.gui.renderer.ConfigScreenRenderer;
 import com.pug523.shelf.gui.text.TextUtil;
 import com.pug523.shelf.gui.widget.ActionButtonWidget;
@@ -42,6 +44,7 @@ public class ConfigScreen extends Screen {
     private final OptionContextController optionContextController;
     private final OptionFocusController focusController;
     private final ConfigChangeController changeController;
+    private final OverlayController overlayController;
 
     private final OptionContextBuilder contextBuilder;
     private final ConfigScreenRenderer renderer;
@@ -65,11 +68,12 @@ public class ConfigScreen extends Screen {
         this.optionContextController = new OptionContextController();
         this.focusController = new OptionFocusController();
         this.changeController = new ConfigChangeController(roots, onApply);
+        this.overlayController = new OverlayController();
 
         this.contextBuilder = new OptionContextBuilder();
         this.renderer = new ConfigScreenRenderer();
         this.input = new ConfigInputHandler(tabController, scrollController, optionContextController, focusController,
-                changeController);
+                changeController, overlayController);
 
         this.layout = new LayoutEngine(config);
         this.undoButton = new ActionButtonWidget(TextUtil.guiText("undo"), btn -> this.changeController.undo());
@@ -79,10 +83,14 @@ public class ConfigScreen extends Screen {
         this.footerButtons = JavaCompat.listOf(undoButton, applyButton, doneButton);
     }
 
-    private void close() {
+    public void close() {
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parent);
         }
+    }
+
+    public OverlayController getOverlayController() {
+        return this.overlayController;
     }
 
     //#if MC >= 12102
@@ -102,6 +110,7 @@ public class ConfigScreen extends Screen {
 
         tabController.init();
         changeController.init();
+        overlayController.updateDimensions(width, height);
 
         rebuildOptionContext();
     }
@@ -120,13 +129,27 @@ public class ConfigScreen extends Screen {
         return footerButtons;
     }
 
+    private void renderConfigScreen(GuiCompat gui, int mouseX, int mouseY, float partialTick) {
+        renderer.render(gui, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(),
+                focusController, scrollController);
+        if (overlayController.hasActiveOverlay()) {
+            ScreenOverlay overlay = overlayController.getActiveOverlay();
+
+            if (overlay.shouldDimBackground()) {
+                // Background tint block
+                gui.fill(0, 0, this.width, this.height, 0x66000000);
+            }
+            overlay.render(this.font, gui, mouseX, mouseY, partialTick);
+        }
+    }
+
     @Override
     // @formatter:off
     //#if MC >= 12106
     public void extractRenderState(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
         updateButtonStates();
         GuiCompat compat = new GuiCompat(gui);
-        renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
+        renderConfigScreen(compat, mouseX, mouseY, partialTick);
         super.extractRenderState(gui, mouseX, mouseY, partialTick);
     }
     //#elseif MC >= 12000
@@ -138,7 +161,7 @@ public class ConfigScreen extends Screen {
         //#endif
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(gui);
-    //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
+    //$$    renderConfigScreen(compat, mouseX, mouseY, partialTick);
     //$$    // super.render(gui, mouseX, mouseY, partialTick);
     //$$ }
     //#elseif MC >= 11600
@@ -146,7 +169,7 @@ public class ConfigScreen extends Screen {
     //$$    this.renderBackground(poseStack);
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(poseStack);
-    //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
+    //$$    renderConfigScreen(compat, mouseX, mouseY, partialTick);
     //$$    // super.render(poseStack, mouseX, mouseY, partialTick);
     //$$ }
     //#else
@@ -154,7 +177,7 @@ public class ConfigScreen extends Screen {
     //$$    this.renderBackground();
     //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat();
-    //$$    renderer.render(compat, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(), focusController, scrollController);
+    //$$    renderConfigScreen(compat, mouseX, mouseY, partialTick);
     //$$    // super.render(mouseX, mouseY, partialTick);
     //$$ }
     //#endif
@@ -182,14 +205,14 @@ public class ConfigScreen extends Screen {
 
         TabNode before = tabController.getSelected();
 
-        boolean handled = input.mouseClicked(mouseX, mouseY, button, modifiers, layout);
+        boolean result = input.mouseClicked(mouseX, mouseY, button, modifiers, layout);
 
         if (before != tabController.getSelected()) {
             rebuildOptionContext();
         }
 
-        if (handled) {
-            return handled;
+        if (result) {
+            return result;
         }
         //#if MC >= 12109
         return super.mouseClicked(event, doubleClick);

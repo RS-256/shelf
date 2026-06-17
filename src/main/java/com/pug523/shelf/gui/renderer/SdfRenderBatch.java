@@ -66,7 +66,6 @@ public class SdfRenderBatch {
         }
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
 
-        // PERFECT RESTORATION: Restore vanilla states exactly as they were before we intervened
         GL30.glBindVertexArray(originalVao[0]);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, originalVbo[0]);
 

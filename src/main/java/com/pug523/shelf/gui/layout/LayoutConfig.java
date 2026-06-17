@@ -30,8 +30,8 @@ public class LayoutConfig {
     public int descTextRightPadding = 20;
 
     // Capsule Toggle Widget Sizing
-    public int capsuleToggleWidth = 30;
-    public int capsuleToggleHeight = 14;
+    public int capsuleToggleWidth = 25;
+    public int capsuleToggleHeight = 12;
     public int capsuleTogglePaddingRight = 25;
     public int capsuleToggleHitboxPadding = 4;
 

@@ -70,6 +70,16 @@ public class GuiCompat {
         //#endif
     }
 
+    public void fillGradient(int x0, int y0, int x1, int y1, int col1, int col2) {
+        //#if MC >= 12000
+        this.graphics.fillGradient(x0, y0, x1, y1, col1, col2);
+        //#elseif MC >= 11600
+        //$$ Minecraft.getInstance().gui.fillGradient(this.poseStack, x0, y0, x1, y1, col1, col2);
+        //#else
+        //$$ Minecraft.getInstance().gui.fillGradient(x0, y0, x1, y1, col1, col2);
+        //#endif
+    }
+
     public void text(Font font, Component text, int x, int y, int color, boolean shadow) {
         //#if MC >= 12000
         this.graphics.text(font, text, x, y, color, shadow);
