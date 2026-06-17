@@ -10,19 +10,20 @@ import com.pug523.shelf.gui.sound.SoundUtil;
 
 import net.minecraft.client.gui.Font;
 
-public class BooleanOptionWidget extends OptionWidget<Boolean> {
+public class ToggleCapsuleWidget extends OptionWidget<Boolean> {
     private LayoutConfig cachedConfig;
+    // TODO: move round to layout config as `roundedToggleCapsule`
     private final boolean round;
     private int cachedX, cachedY, cachedWidth, cachedHeight;
 
-    public BooleanOptionWidget(Option<Boolean> option, boolean round) {
+    public ToggleCapsuleWidget(Option<Boolean> option, boolean round) {
         super(option);
         this.round = round;
     }
 
     @Override
     public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX,
-            int mouseY) {
+            int mouseY, int scissorX, int scissorY, int scissorMaxX, int scissorMaxY) {
         this.cachedX = x;
         this.cachedY = y;
         this.cachedWidth = width;
@@ -31,8 +32,8 @@ public class BooleanOptionWidget extends OptionWidget<Boolean> {
 
         LayoutConfig cfg = layout.getConfig();
 
-        int sx = switchX(cfg);
-        int sy = switchY(cfg);
+        int switchX = getSwitchX(cfg);
+        int switchY = getSwitchY(cfg);
 
         boolean val = option.getPendingValue().booleanValue();
         boolean isHovered = isGenerouslyHovered(mouseX, mouseY, cfg);
@@ -45,29 +46,31 @@ public class BooleanOptionWidget extends OptionWidget<Boolean> {
         }
 
         if (round) {
-            RenderUtil.drawCapsule(gui, sx, sy, cfg.toggleSwitchWidth, cfg.toggleSwitchHeight, bgBoxColor);
+            RenderUtil.drawCapsule(gui, switchX, switchY, cfg.capsuleToggleWidth, cfg.capsuleToggleHeight, bgBoxColor,
+                    scissorX, scissorY, scissorMaxX, scissorMaxY);
         } else {
-            gui.fill(sx, sy, sx + cfg.toggleSwitchWidth, sy + cfg.toggleSwitchHeight, bgBoxColor);
+            gui.fill(switchX, switchY, switchX + cfg.capsuleToggleWidth, switchY + cfg.capsuleToggleHeight, bgBoxColor);
         }
 
-        int knobHeight = cfg.toggleSwitchHeight - 6;
+        int knobHeight = cfg.capsuleToggleHeight - 6;
         int knobWidth = knobHeight;
-        int knobY = sy + (cfg.toggleSwitchHeight - knobHeight) / 2;
-        int paddingX = (cfg.toggleSwitchHeight - knobHeight) / 2;
-        int knobX = val ? (sx + cfg.toggleSwitchWidth - knobWidth - paddingX) : (sx + paddingX);
+        int knobY = switchY + (cfg.capsuleToggleHeight - knobHeight) / 2;
+        int paddingX = (cfg.capsuleToggleHeight - knobHeight) / 2;
+        int knobX = val ? (switchX + cfg.capsuleToggleWidth - knobWidth - paddingX) : (switchX + paddingX);
 
         if (round) {
             int radius = knobWidth / 2;
             int centerX = knobX + radius;
             int centerY = knobY + radius;
-            RenderUtil.drawCircle(gui, centerX, centerY, radius, cfg.colorToggleKnob);
+            RenderUtil.drawCircle(gui, centerX, centerY, radius, cfg.colorToggleKnob, scissorX, scissorY, scissorMaxX,
+                    scissorMaxY);
         } else {
             gui.fill(knobX, knobY, knobX + knobWidth, knobY + knobHeight, cfg.colorToggleKnob);
         }
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers) {
         if (button == InputUtil.LEFT_MOUSE_BUTTON && cachedConfig != null) {
             if (isGenerouslyHovered(mouseX, mouseY, cachedConfig)) {
                 toggle();
@@ -83,18 +86,19 @@ public class BooleanOptionWidget extends OptionWidget<Boolean> {
     }
 
     private boolean isGenerouslyHovered(double mouseX, double mouseY, LayoutConfig cfg) {
-        int sx = switchX(cfg);
-        int sy = switchY(cfg);
-        return mouseX >= sx - cfg.toggleHitboxPadding && mouseX <= sx + cfg.toggleSwitchWidth + cfg.toggleHitboxPadding
-                && mouseY >= sy - cfg.toggleHitboxPadding
-                && mouseY <= sy + cfg.toggleSwitchHeight + cfg.toggleHitboxPadding;
+        int sx = getSwitchX(cfg);
+        int sy = getSwitchY(cfg);
+        return mouseX >= sx - cfg.capsuleToggleHitboxPadding
+                && mouseX <= sx + cfg.capsuleToggleWidth + cfg.capsuleToggleHitboxPadding
+                && mouseY >= sy - cfg.capsuleToggleHitboxPadding
+                && mouseY <= sy + cfg.capsuleToggleHeight + cfg.capsuleToggleHitboxPadding;
     }
 
-    private int switchX(LayoutConfig cfg) {
-        return cachedX + cachedWidth - cfg.toggleSwitchWidth - cfg.togglePaddingRight;
+    private int getSwitchX(LayoutConfig cfg) {
+        return cachedX + cachedWidth - cfg.capsuleToggleWidth - cfg.capsuleTogglePaddingRight;
     }
 
-    private int switchY(LayoutConfig cfg) {
-        return cachedY + (cachedHeight - cfg.toggleSwitchHeight) / 2;
+    private int getSwitchY(LayoutConfig cfg) {
+        return cachedY + (cachedHeight - cfg.capsuleToggleHeight) / 2;
     }
 }

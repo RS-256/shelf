@@ -15,10 +15,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
-public class SliderOptionWidget<N extends Number & Comparable<N>> extends OptionWidget<N> {
+public class SliderWidget<N extends Number & Comparable<N>> extends OptionWidget<N> {
     private final double min;
     private final double max;
     private final double step;
+    // TODO: move round to layout config as `roundedSlider`
     private final boolean round;
     private final Function<Double, N> typeConverter;
 
@@ -26,8 +27,7 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
     private LayoutConfig cachedConfig;
     private boolean isDragging = false;
 
-    public SliderOptionWidget(Option<N> option, N min, N max, N step, boolean round,
-            Function<Double, N> typeConverter) {
+    public SliderWidget(Option<N> option, N min, N max, N step, boolean round, Function<Double, N> typeConverter) {
         super(option);
         this.min = min.doubleValue();
         this.max = max.doubleValue();
@@ -36,23 +36,22 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
         this.typeConverter = typeConverter;
     }
 
-    public static SliderOptionWidget<Integer> ofInt(Option<Integer> option, int min, int max, int step, boolean round) {
-        return new SliderOptionWidget<Integer>(option, min, max, step, round, d -> (int) Math.round(d));
+    public static SliderWidget<Integer> ofInt(Option<Integer> option, int min, int max, int step, boolean round) {
+        return new SliderWidget<Integer>(option, min, max, step, round, d -> (int) Math.round(d));
     }
 
-    public static SliderOptionWidget<Double> ofDouble(Option<Double> option, double min, double max, double step,
+    public static SliderWidget<Double> ofDouble(Option<Double> option, double min, double max, double step,
             boolean round) {
-        return new SliderOptionWidget<Double>(option, min, max, step, round, d -> d);
+        return new SliderWidget<Double>(option, min, max, step, round, d -> d);
     }
 
-    public static SliderOptionWidget<Float> ofFloat(Option<Float> option, float min, float max, float step,
-            boolean round) {
-        return new SliderOptionWidget<Float>(option, min, max, step, round, d -> (float) d.floatValue());
+    public static SliderWidget<Float> ofFloat(Option<Float> option, float min, float max, float step, boolean round) {
+        return new SliderWidget<Float>(option, min, max, step, round, d -> (float) d.floatValue());
     }
 
     @Override
     public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX,
-            int mouseY) {
+            int mouseY, int scissorX, int scissorY, int scissorMaxX, int scissorMaxY) {
         this.cachedX = x;
         this.cachedY = y;
         this.cachedWidth = width;
@@ -78,7 +77,8 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
             int centerX = fillEnd;
             int centerY = sliderY + (cfg.sliderHeight / 2);
             int radius = (int) (cfg.sliderKnobSize / 2.5f);
-            RenderUtil.drawCircle(gui, centerX, centerY, radius, cfg.colorSliderKnob);
+            RenderUtil.drawCircle(gui, centerX, centerY, radius, cfg.colorSliderKnob, scissorX, scissorY, scissorMaxX,
+                    scissorMaxY);
         } else {
             int knobX = fillEnd - (cfg.sliderKnobSize / 2);
             int knobY = sliderY + (cfg.sliderHeight / 2) - (cfg.sliderKnobSize / 2);
@@ -96,7 +96,7 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers) {
         if (button == InputUtil.LEFT_MOUSE_BUTTON && cachedConfig != null) {
             int sliderX = cachedX + cachedWidth - cachedConfig.sliderWidth - cachedConfig.sliderPaddingX;
 

@@ -11,8 +11,8 @@ import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.sound.SoundUtil;
 import com.pug523.shelf.gui.text.TextUtil;
 
-public class ActionButtonWidget implements ClickableWidget {
-    private final Component label;
+public class ActionButtonWidget implements IClickableWidget {
+    private Component label;
     private final Consumer<ActionButtonWidget> onPress;
     private boolean enabled = true;
     private boolean visible = true;
@@ -20,16 +20,25 @@ public class ActionButtonWidget implements ClickableWidget {
     private boolean silent = false;
 
     // TODO: move this to layout config
-    private boolean withShadow = true;
+    private final boolean withShadow;
 
-    public ActionButtonWidget(Component label, Consumer<ActionButtonWidget> onPress) {
+    public ActionButtonWidget(Component label, Consumer<ActionButtonWidget> onPress, boolean withShadow) {
         this.label = label;
         this.onPress = onPress;
+        this.withShadow = withShadow;
+    }
+
+    public ActionButtonWidget(Component label, Consumer<ActionButtonWidget> onPress) {
+        this(label, onPress, true);
+    }
+
+    public void setLabel(Component label) {
+        this.label = label;
     }
 
     @Override
     public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX,
-            int mouseY) {
+            int mouseY, int scissorX, int scissorY, int scissorMaxX, int scissorMaxY) {
         if (!this.visible) {
             return;
         }
@@ -61,7 +70,7 @@ public class ActionButtonWidget implements ClickableWidget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers) {
         if (!this.visible || !this.enabled) {
             return false;
         }

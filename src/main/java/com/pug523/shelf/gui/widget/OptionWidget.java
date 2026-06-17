@@ -2,7 +2,7 @@ package com.pug523.shelf.gui.widget;
 
 import com.pug523.shelf.config.Option;
 
-public abstract class OptionWidget<T> implements ClickableWidget {
+public abstract class OptionWidget<T> implements IClickableWidget {
     protected final Option<T> option;
 
     public OptionWidget(Option<T> option) {
