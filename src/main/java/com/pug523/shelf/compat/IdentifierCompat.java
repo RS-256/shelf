@@ -3,6 +3,7 @@ package com.pug523.shelf.compat;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.Fluid;
@@ -24,6 +25,30 @@ public class IdentifierCompat {
         //#else
         //$$ return new ResourceLocation(namespace, path);
         //#endif
+    }
+
+    public static Identifier tryParse(String path) {
+        return Identifier.tryParse(path);
+    }
+
+    public static Identifier parse(String path) {
+        //#if MC >= 12100
+        return Identifier.parse(path);
+        //#else
+        //$$ return new ResourceLocation(path);
+        //#endif
+    }
+
+    public static Identifier tryBuild(String namespace, String path) {
+        //#if MC >= 11900
+        return Identifier.tryBuild(namespace, path);
+        //#else
+        //$$ return new ResourceLocation(namespace, path);
+        //#endif
+    }
+
+    public static Identifier id(Item item) {
+        return BuiltinRegistriesCompat.ITEM.getKey(item);
     }
 
     public static Identifier id(Block block) {

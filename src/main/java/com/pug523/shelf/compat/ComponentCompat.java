@@ -39,4 +39,14 @@ public class ComponentCompat {
         //$$ return new TranslatableComponent(message);
         //#endif
     }
+
+    // @formatter:off
+    //#if MC >= 11600
+    public static MutableComponent empty() {
+    //#else
+    //$$ public static Component empty() {
+    //#endif
+    // @formatter:on
+        return literal("");
+    }
 }
