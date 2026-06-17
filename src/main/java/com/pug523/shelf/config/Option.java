@@ -38,6 +38,10 @@ public class Option<T> {
         return name;
     }
 
+    public String getDescriptionKey() {
+        return descriptionKey;
+    }
+
     public Component getDescription() {
         return ComponentCompat.translatable(this.descriptionKey);
     }

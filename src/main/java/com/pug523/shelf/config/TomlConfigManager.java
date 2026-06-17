@@ -2,41 +2,59 @@ package com.pug523.shelf.config;
 
 import java.io.File;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.electronwill.nightconfig.core.serde.ObjectDeserializer;
 import com.electronwill.nightconfig.core.serde.ObjectDeserializerBuilder;
 import com.electronwill.nightconfig.core.serde.ObjectSerializer;
+import com.electronwill.nightconfig.core.serde.ObjectSerializerBuilder;
 import com.pug523.shelf.Shelf;
+import com.pug523.shelf.compat.BuiltinRegistriesCompat;
 
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
-public class TomlConfigManager<T extends Serializable> implements ConfigManager<T> {
+public class TomlConfigManager<T extends Serializable> implements IConfigManager<T> {
 
     private final Class<T> configClass;
     private final File configFile;
     private final Supplier<T> defaultSupplier;
 
-    private final ObjectSerializer serializer = ObjectSerializer.standard();
+    private final ObjectSerializer serializer = createCustomSerializer();
     private final ObjectDeserializer deserializer = createCustomDeserializer();
+
+    private final Migrator migrator;
 
     private T config;
 
-    public TomlConfigManager(Class<T> configClass, File configFile, Supplier<T> defaultSupplier) {
+    public TomlConfigManager(Class<T> configClass, File configFile, Supplier<T> defaultSupplier, Migrator migrator) {
         this.configClass = configClass;
         this.configFile = configFile;
         this.defaultSupplier = defaultSupplier;
+        this.migrator = migrator;
         this.config = defaultSupplier.get();
     }
 
-    public TomlConfigManager(Class<T> configClass, String configDirectory, String fileName,
-            Supplier<T> defaultSupplier) {
-        this(configClass, resolveConfigFile(configDirectory, fileName), defaultSupplier);
-    }
+    private static ObjectSerializer createCustomSerializer() {
+        ObjectSerializerBuilder builder = ObjectSerializer.builder();
 
-    private static File resolveConfigFile(String dir, String file) {
-        return FabricLoader.getInstance().getConfigDir().resolve(dir).resolve(file).toFile();
+        builder.withSerializerForClass(Item.class, (value, context) -> {
+            if (value == null || value == Items.AIR) {
+                return "minecraft:air";
+            }
+            return BuiltinRegistriesCompat.ITEM.getKey(value).toString();
+        });
+
+        builder.withSerializerProvider((valueClass, context) -> {
+            if (valueClass == null) {
+                return (value, ctx) -> null;
+            }
+            return null;
+        });
+
+        return builder.build();
     }
 
     private static ObjectDeserializer createCustomDeserializer() {
@@ -75,17 +93,21 @@ public class TomlConfigManager<T extends Serializable> implements ConfigManager<
         }
 
         try (CommentedFileConfig fileConfig = CommentedFileConfig.builder(configFile).build()) {
-
             fileConfig.load();
+
+            T defaultObj = defaultSupplier.get();
+            boolean migrated = migrator.migrate(fileConfig, defaultObj, serializer);
 
             config = defaultSupplier.get();
             deserializer.deserializeFields(fileConfig, config);
+
+            if (migrated) {
+                save();
+            }
         } catch (Exception e) {
             Shelf.LOGGER.error(
-                    "Failed to parse user config from toml cleanly (maybe due to an invalid format or typo). Reverting to default config.",
-                    e.getMessage());
-            Shelf.LOGGER.error("file: {}", configFile.getName());
-            Shelf.LOGGER.error("message: {}", e.getMessage());
+                    "Failed to parse user config from toml cleanly. Reverting to default config.\nfile: {}\nmessage: {}",
+                    configFile.getName(), e.getMessage());
             config = defaultSupplier.get();
             save();
         }
@@ -103,9 +125,8 @@ public class TomlConfigManager<T extends Serializable> implements ConfigManager<
             serializer.serializeFields(config, fileConfig);
             fileConfig.save();
         } catch (Exception e) {
-            Shelf.LOGGER.error("Failed to save user config to toml.");
-            Shelf.LOGGER.error("file: {}", configFile.getName());
-            Shelf.LOGGER.error("message: {}", e.getMessage());
+            Shelf.LOGGER.error("Failed to save user config to toml.\nfile: {}\nmessage: {}", configFile.getName(),
+                    e.getMessage());
             e.printStackTrace();
         }
     }
