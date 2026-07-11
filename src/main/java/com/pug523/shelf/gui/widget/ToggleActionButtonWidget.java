@@ -16,42 +16,26 @@ public class ToggleActionButtonWidget extends OptionWidget<Boolean> {
 
     private final ActionButtonWidget buttonDelegate;
 
-    private int cachedBtnX;
-    private int cachedBtnY;
-    private int cachedBtnWidth;
-    private int cachedBtnHeight;
-    private boolean isBoundsCached = false;
-
     public ToggleActionButtonWidget(Option<Boolean> option) {
         super(option);
         this.buttonDelegate = new ActionButtonWidget(COMPONENT_FALSE, btn -> this.toggle());
     }
 
     @Override
-    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX,
-            int mouseY, int scissorX, int scissorY, int scissorMaxX, int scissorMaxY) {
+    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX, int mouseY) {
         LayoutConfig cfg = layout.getConfig();
 
-        this.cachedBtnWidth = cfg.toggleButtonWidth;
-        this.cachedBtnHeight = cfg.toggleButtonHeight;
-        this.cachedBtnX = x + width - this.cachedBtnWidth - cfg.toggleButtonRightPadding;
-        this.cachedBtnY = y + (height - this.cachedBtnHeight) / 2;
-        this.isBoundsCached = true;
-
-        boolean pendingVal = option.getPendingValue().booleanValue();
+        boolean pendingVal = option.getPendingValue();
         this.buttonDelegate.setLabel(pendingVal ? COMPONENT_TRUE : COMPONENT_FALSE);
 
-        this.buttonDelegate.render(font, gui, layout, this.cachedBtnX, this.cachedBtnY, this.cachedBtnWidth,
-                this.cachedBtnHeight, mouseX, mouseY, scissorX, scissorY, scissorMaxX, scissorMaxY);
+        int btnX = x + width - cfg.toggleButtonWidth - layout.optionWidgetRightMargin;
+        int btnY = y + (height - cfg.toggleButtonHeight) / 2;
+        this.buttonDelegate.render(font, gui, layout, btnX, btnY, cfg.toggleButtonWidth, cfg.toggleButtonHeight, mouseX, mouseY);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers) {
-        if (!this.isBoundsCached) {
-            return false;
-        }
-
-        return this.buttonDelegate.mouseClicked(mouseX, mouseY, button, modifiers);
+    public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers, LayoutEngine layout) {
+        return this.buttonDelegate.mouseClicked(mouseX, mouseY, button, modifiers, layout);
     }
 
     private void toggle() {

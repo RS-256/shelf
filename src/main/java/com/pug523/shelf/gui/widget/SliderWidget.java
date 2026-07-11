@@ -6,6 +6,7 @@ import com.pug523.shelf.compat.ComponentCompat;
 import com.pug523.shelf.compat.GuiCompat;
 import com.pug523.shelf.config.Option;
 import com.pug523.shelf.gui.input.InputUtil;
+import com.pug523.shelf.gui.layout.Bounds;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.renderer.RenderUtil;
@@ -19,48 +20,40 @@ public class SliderWidget<N extends Number & Comparable<N>> extends OptionWidget
     private final double min;
     private final double max;
     private final double step;
-    // TODO: move round to layout config as `roundedSlider`
-    private final boolean round;
     private final Function<Double, N> typeConverter;
 
-    private int cachedX, cachedY, cachedWidth, cachedHeight;
-    private LayoutConfig cachedConfig;
+    private Bounds cachedWidgetBounds;
+    private LayoutEngine cachedEngine;
     private boolean isDragging = false;
 
-    public SliderWidget(Option<N> option, N min, N max, N step, boolean round, Function<Double, N> typeConverter) {
+    public SliderWidget(Option<N> option, N min, N max, N step, Function<Double, N> typeConverter) {
         super(option);
         this.min = min.doubleValue();
         this.max = max.doubleValue();
         this.step = step.doubleValue();
-        this.round = round;
         this.typeConverter = typeConverter;
     }
 
-    public static SliderWidget<Integer> ofInt(Option<Integer> option, int min, int max, int step, boolean round) {
-        return new SliderWidget<Integer>(option, min, max, step, round, d -> (int) Math.round(d));
+    public static SliderWidget<Integer> ofInt(Option<Integer> option, int min, int max, int step) {
+        return new SliderWidget<>(option, min, max, step, d -> (int) Math.round(d));
     }
 
-    public static SliderWidget<Double> ofDouble(Option<Double> option, double min, double max, double step,
-            boolean round) {
-        return new SliderWidget<Double>(option, min, max, step, round, d -> d);
+    public static SliderWidget<Double> ofDouble(Option<Double> option, double min, double max, double step) {
+        return new SliderWidget<>(option, min, max, step, d -> d);
     }
 
-    public static SliderWidget<Float> ofFloat(Option<Float> option, float min, float max, float step, boolean round) {
-        return new SliderWidget<Float>(option, min, max, step, round, d -> (float) d.floatValue());
+    public static SliderWidget<Float> ofFloat(Option<Float> option, float min, float max, float step) {
+        return new SliderWidget<>(option, min, max, step, Double::floatValue);
     }
 
     @Override
-    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX,
-            int mouseY, int scissorX, int scissorY, int scissorMaxX, int scissorMaxY) {
-        this.cachedX = x;
-        this.cachedY = y;
-        this.cachedWidth = width;
-        this.cachedHeight = height;
-        this.cachedConfig = layout.getConfig();
+    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX, int mouseY) {
+        this.cachedWidgetBounds = new Bounds(x, y, width, height);
+        this.cachedEngine = layout;
 
         LayoutConfig cfg = layout.getConfig();
 
-        int sliderX = x + width - cfg.sliderWidth - cfg.sliderPaddingX;
+        int sliderX = x + width - cfg.sliderWidth - layout.optionWidgetRightMargin;
         int sliderY = y + (height - cfg.sliderHeight) / 2;
 
         double currentValue = option.getPendingValue().doubleValue();
@@ -73,12 +66,8 @@ public class SliderWidget<N extends Number & Comparable<N>> extends OptionWidget
         int fillEnd = sliderX + (int) (cfg.sliderWidth * progress);
         gui.fill(sliderX, sliderY, fillEnd, sliderY + cfg.sliderHeight, cfg.colorSliderProgress);
 
-        if (round) {
-            int centerX = fillEnd;
-            int centerY = sliderY + (cfg.sliderHeight / 2);
-            int radius = (int) (cfg.sliderKnobSize / 2.5f);
-            RenderUtil.drawCircle(gui, centerX, centerY, radius, cfg.colorSliderKnob, scissorX, scissorY, scissorMaxX,
-                    scissorMaxY);
+        if (cfg.roundedSlider) {
+            RenderUtil.renderCircle(gui, fillEnd, sliderY + (cfg.sliderHeight / 2.0f), cfg.sliderKnobSize / 2.25f, cfg.colorSliderKnob);
         } else {
             int knobX = fillEnd - (cfg.sliderKnobSize / 2);
             int knobY = sliderY + (cfg.sliderHeight / 2) - (cfg.sliderKnobSize / 2);
@@ -86,23 +75,21 @@ public class SliderWidget<N extends Number & Comparable<N>> extends OptionWidget
         }
 
         // Text
-        String valueText = formatValue(currentValue);
-        Component textComponent = ComponentCompat.literal(valueText);
-        int textWidth = TextUtil.width(font, textComponent);
-        int textX = sliderX - textWidth - cfg.sliderTextPadding;
+        Component textComponent = ComponentCompat.literal(formatValue(currentValue));
+        int textX = sliderX - TextUtil.width(font, textComponent) - cfg.sliderTextPadding;
         int textY = y + (height - font.lineHeight) / 2 + 1;
 
         gui.text(font, textComponent, textX, textY, cfg.colorSliderText, false);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers) {
-        if (button == InputUtil.LEFT_MOUSE_BUTTON && cachedConfig != null) {
-            int sliderX = cachedX + cachedWidth - cachedConfig.sliderWidth - cachedConfig.sliderPaddingX;
+    public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers, LayoutEngine layout) {
+        if (button == InputUtil.LEFT_MOUSE_BUTTON && cachedWidgetBounds != null) {
+            LayoutConfig cfg = cachedEngine.getConfig();
+            int sliderX = cachedWidgetBounds.x + cachedWidgetBounds.width - cfg.sliderWidth - layout.optionWidgetRightMargin;
 
-            if (mouseX >= sliderX && mouseX <= sliderX + cachedConfig.sliderWidth && mouseY >= cachedY
-                    && mouseY <= cachedY + cachedHeight) {
-                updateValueFromMouse(mouseX, sliderX, cachedConfig.sliderWidth);
+            if (mouseX >= sliderX && mouseX <= sliderX + cfg.sliderWidth && mouseY >= cachedWidgetBounds.y && mouseY <= cachedWidgetBounds.maxY) {
+                updateValueFromMouse(mouseX);
                 this.isDragging = true;
                 return true;
             }
@@ -111,42 +98,32 @@ public class SliderWidget<N extends Number & Comparable<N>> extends OptionWidget
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (button == 0 && this.isDragging && cachedConfig != null) {
-            int sliderX = cachedX + cachedWidth - cachedConfig.sliderWidth - cachedConfig.sliderPaddingX;
-            updateValueFromMouse(mouseX, sliderX, cachedConfig.sliderWidth);
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY, LayoutEngine layout) {
+        if (button == 0 && this.isDragging && cachedWidgetBounds != null) {
+            updateValueFromMouse(mouseX);
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, int button, LayoutEngine layout) {
         this.isDragging = false;
         return true;
     }
 
-    private void updateValueFromMouse(double mouseX, int sliderX, int sliderWidth) {
-        double pct = (mouseX - sliderX) / (double) sliderWidth;
-        pct = Mth.clamp(pct, 0.0, 1.0);
-
+    private void updateValueFromMouse(double mouseX) {
+        double pct = cachedEngine.getSliderProgressFromMouse(mouseX, cachedWidgetBounds);
         double rawValue = min + (max - min) * pct;
-
         if (step > 0.0) {
             rawValue = Math.round(rawValue / step) * step;
         }
-
         rawValue = Mth.clamp(rawValue, min, max);
 
-        N finalValue = typeConverter.apply(rawValue);
-        option.setPendingValue(finalValue);
+        option.setPendingValue(typeConverter.apply(rawValue));
     }
 
     private String formatValue(double value) {
-        if (step >= 1.0) {
-            return String.valueOf((int) value);
-        } else {
-            return String.format("%.2f", value);
-        }
+        return step >= 1.0 ? String.valueOf((int) value) : String.format("%.2f", value);
     }
 }
