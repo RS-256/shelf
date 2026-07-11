@@ -15,11 +15,11 @@ public final class Colors {
     // Dark & Grayscale (Solid)
     public static final int MIDDLE_GRAY = 0xFF3F3F43;
     public static final int MIDDLE_GRAY2 = 0xFF5A5A5C;
-    public static final int BUTTON_GRAY = 0xFF4A4A4A;
-    public static final int BUTTON_GRAY_HOVER = 0xFF5A5A5A;
-    public static final int DARK_GRAY = 0xFF2A2A2A;
-    public static final int BUTTON_GRAY_DIS = 0xFF2D2D2D;
-    public static final int BORDER_BLACK = 0xFF202020;
+    public static final int BUTTON_GRAY = 0x2A333333;
+    public static final int BUTTON_GRAY_HOVER = 0x14FFFFFF;
+    public static final int BUTTON_GRAY_DIS = 0xFF131313;
+    public static final int DARK_GRAY = 0xFF101010;
+    public static final int BORDER_BLACK = 0xFF434343;
     public static final int CHARCOAL = 0xFF1A1A1A;
     public static final int BLACK = 0xFF000000;
 
