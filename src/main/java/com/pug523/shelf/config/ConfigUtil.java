@@ -19,7 +19,7 @@ public class ConfigUtil {
         return FabricLoader.getInstance().getConfigDir().resolve(dir).resolve(file).toFile();
     }
 
-    private static final String AIR_KEY = BuiltinRegistriesCompat.ITEM.getKey(ITEMS.AIR).toString();
+    private static final String AIR_KEY = BuiltinRegistriesCompat.ITEM.getKey(Items.AIR).toString();
 
     public static ObjectSerializer createSerializer() {
         ObjectSerializerBuilder builder = ObjectSerializer.builder();
@@ -46,7 +46,7 @@ public class ConfigUtil {
 
         builder.withDeserializerForClass(String.class, Item.class, (value, constraint, context) -> {
             if (value == null) {
-                return AIR_KEY;
+                return Items.AIR;
             }
             Identifier id = IdentifierCompat.tryParse(value);
             return BuiltinRegistriesCompat.getItem(id);
