@@ -2,11 +2,13 @@ package com.pug523.shelf.gui;
 
 import java.util.List;
 
+import com.pug523.shelf.gui.overlay.ConfirmationOverlay;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFW;
 
 import com.pug523.shelf.compat.GuiCompat;
 import com.pug523.shelf.compat.JavaCompat;
+import com.pug523.shelf.compat.ScreenCompat;
 import com.pug523.shelf.config.Profile;
 import com.pug523.shelf.gui.controller.ConfigChangeController;
 import com.pug523.shelf.gui.controller.OptionContextController;
@@ -17,12 +19,11 @@ import com.pug523.shelf.gui.input.ConfigInputHandler;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.model.OptionContextBuilder;
-import com.pug523.shelf.gui.overlay.OverlayController;
-import com.pug523.shelf.gui.overlay.ScreenOverlay;
+import com.pug523.shelf.gui.controller.OverlayController;
 import com.pug523.shelf.gui.renderer.ConfigScreenRenderer;
 import com.pug523.shelf.gui.text.TextUtil;
 import com.pug523.shelf.gui.widget.ActionButtonWidget;
-import com.pug523.shelf.gui.widget.IClickableWidget;
+import com.pug523.shelf.gui.widget.ClickableWidget;
 
 import net.minecraft.client.gui.Font;
 //#if MC >= 12000
@@ -39,6 +40,9 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 public class ConfigScreen extends Screen {
+    private final Screen parent;
+    private final LayoutEngine layout;
+
     private final TabTreeController tabController;
     private final ScrollController scrollController;
     private final OptionContextController optionContextController;
@@ -50,18 +54,13 @@ public class ConfigScreen extends Screen {
     private final ConfigScreenRenderer renderer;
     private final ConfigInputHandler input;
 
-    private LayoutEngine layout;
-    private final Screen parent;
-
-    private final ActionButtonWidget undoButton;
-    private final ActionButtonWidget applyButton;
-    private final ActionButtonWidget doneButton;
-    private final List<IClickableWidget> footerButtons;
+    private final List<ActionButtonWidget> footerButtons;
 
     public ConfigScreen(Component title, Screen parent, List<TabNode> roots, List<Profile> profiles, Runnable onApply,
-            LayoutConfig config) {
+                        LayoutConfig config) {
         super(title);
         this.parent = parent;
+        this.layout = new LayoutEngine(config);
 
         this.tabController = new TabTreeController(roots);
         this.scrollController = new ScrollController();
@@ -73,30 +72,31 @@ public class ConfigScreen extends Screen {
         this.contextBuilder = new OptionContextBuilder();
         this.renderer = new ConfigScreenRenderer();
         this.input = new ConfigInputHandler(tabController, scrollController, optionContextController, focusController,
-                changeController, overlayController);
+            changeController, overlayController);
 
-        this.layout = new LayoutEngine(config);
-        this.undoButton = new ActionButtonWidget(TextUtil.guiText("undo"), btn -> this.changeController.undo());
-        this.applyButton = new ActionButtonWidget(TextUtil.guiText("apply"), btn -> this.changeController.apply());
-        this.doneButton = new ActionButtonWidget(TextUtil.guiText("done"), btn -> this.close());
+        ActionButtonWidget undoButton = new ActionButtonWidget(TextUtil.guiText("undo"), btn -> this.changeController.undo());
+        ActionButtonWidget applyButton = new ActionButtonWidget(TextUtil.guiText("apply"), btn -> this.changeController.apply());
+        ActionButtonWidget doneButton = new ActionButtonWidget(TextUtil.guiText("done"), btn -> this.changeController.closeOrConfirm(this));
 
         this.footerButtons = JavaCompat.listOf(undoButton, applyButton, doneButton);
     }
 
     public void close() {
-        if (this.minecraft != null) {
-            this.minecraft.setScreen(this.parent);
-        }
+        ScreenCompat.setScreen(this.minecraft, this.parent);
     }
 
     public OverlayController getOverlayController() {
         return this.overlayController;
     }
 
+    public ConfigChangeController getChangeController() {
+        return this.changeController;
+    }
+
     //#if MC >= 12102
     @Override
     //#endif
-    public Font getFont() {
+    public @NonNull Font getFont() {
         //#if MC >= 12102
         return super.getFont();
         //#else
@@ -106,48 +106,31 @@ public class ConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        layout.rebuild(width, height);
-
         tabController.init();
-        changeController.init();
-        overlayController.updateDimensions(width, height);
 
         rebuildOptionContext();
+
+        layout.rebuild(width, height, getFont(), footerButtons, tabController.getFlat(),
+            optionContextController.getContext().items());
     }
 
     private void rebuildOptionContext() {
         optionContextController.setContext(contextBuilder.build(tabController.getSelected()));
     }
 
-    private void updateButtonStates() {
-        boolean hasChanges = changeController.isDirty();
-        this.undoButton.setEnabled(hasChanges);
-        this.applyButton.setEnabled(hasChanges);
-    }
-
-    public List<IClickableWidget> getFooterButtons() {
+    public List<ActionButtonWidget> getFooterButtons() {
         return footerButtons;
     }
 
     private void renderConfigScreen(GuiCompat gui, int mouseX, int mouseY, float partialTick) {
-        renderer.render(gui, this, layout, mouseX, mouseY, tabController, optionContextController.getContext(),
-                focusController, scrollController);
-        if (overlayController.hasActiveOverlay()) {
-            ScreenOverlay overlay = overlayController.getActiveOverlay();
-
-            if (overlay.shouldDimBackground()) {
-                // Background tint block
-                gui.fill(0, 0, this.width, this.height, 0x66000000);
-            }
-            overlay.render(this.font, gui, mouseX, mouseY, partialTick);
-        }
+        renderer.render(gui, this, layout, mouseX, mouseY, partialTick, tabController, optionContextController.getContext(),
+            focusController, scrollController, changeController, overlayController);
     }
 
     @Override
     // @formatter:off
     //#if MC >= 12106
-    public void extractRenderState(GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
-        updateButtonStates();
+    public void extractRenderState(@NonNull GuiGraphicsExtractor gui, int mouseX, int mouseY, float partialTick) {
         GuiCompat compat = new GuiCompat(gui);
         renderConfigScreen(compat, mouseX, mouseY, partialTick);
         super.extractRenderState(gui, mouseX, mouseY, partialTick);
@@ -159,7 +142,6 @@ public class ConfigScreen extends Screen {
         //#else
         //$$ this.renderBackground(gui);
         //#endif
-    //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(gui);
     //$$    renderConfigScreen(compat, mouseX, mouseY, partialTick);
     //$$    // super.render(gui, mouseX, mouseY, partialTick);
@@ -167,7 +149,6 @@ public class ConfigScreen extends Screen {
     //#elseif MC >= 11600
     //$$ public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
     //$$    this.renderBackground(poseStack);
-    //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat(poseStack);
     //$$    renderConfigScreen(compat, mouseX, mouseY, partialTick);
     //$$    // super.render(poseStack, mouseX, mouseY, partialTick);
@@ -175,7 +156,6 @@ public class ConfigScreen extends Screen {
     //#else
     //$$ public void render(int mouseX, int mouseY, float partialTick) {
     //$$    this.renderBackground();
-    //$$    updateButtonStates();
     //$$    GuiCompat compat = new GuiCompat();
     //$$    renderConfigScreen(compat, mouseX, mouseY, partialTick);
     //$$    // super.render(mouseX, mouseY, partialTick);
@@ -187,7 +167,6 @@ public class ConfigScreen extends Screen {
     // @formatter:off
     //#if MC >= 12109
     public boolean mouseClicked(@NonNull MouseButtonEvent event, boolean doubleClick) {
-        if (super.mouseClicked(event, doubleClick)) return true;
         int button = event.button();
         double mouseX = event.x();
         double mouseY = event.y();
@@ -197,22 +176,23 @@ public class ConfigScreen extends Screen {
     //$$     int modifiers = 0;
     //#endif
     // @formatter:on
-        for (IClickableWidget btn : footerButtons) {
-            if (btn.mouseClicked(mouseX, mouseY, button, modifiers)) {
+        for (ClickableWidget btn : footerButtons) {
+            if (btn.mouseClicked(mouseX, mouseY, button, modifiers, layout)) {
                 return true;
             }
         }
 
         TabNode before = tabController.getSelected();
-
         boolean result = input.mouseClicked(mouseX, mouseY, button, modifiers, layout);
 
         if (before != tabController.getSelected()) {
             rebuildOptionContext();
+            layout.rebuild(this.width, this.height, this.getFont(), this.footerButtons, this.tabController.getFlat(),
+                this.optionContextController.getContext().items());
         }
 
         if (result) {
-            return result;
+            return true;
         }
         //#if MC >= 12109
         return super.mouseClicked(event, doubleClick);
@@ -232,7 +212,7 @@ public class ConfigScreen extends Screen {
     //$$ public boolean mouseReleased(double mouseX, double mouseY, int button) {
     //#endif
     // @formatter:on
-        input.mouseReleased(mouseX, mouseY, button);
+        input.mouseReleased(mouseX, mouseY, button, layout);
         //#if MC >= 12109
         return super.mouseReleased(event);
         //#else
@@ -303,6 +283,6 @@ public class ConfigScreen extends Screen {
     //$$     int codepoint = (int) cp;
     //#endif
     // @formatter:on
-        return input.charTyped(codepoint, modifiers);
+        return input.charTyped(codepoint, modifiers, layout);
     }
 }
