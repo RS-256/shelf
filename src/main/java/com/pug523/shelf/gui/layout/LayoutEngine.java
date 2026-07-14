@@ -44,8 +44,8 @@ public class LayoutEngine {
     public Bounds pickerCurrentColorSwat;
     public Bounds pickerOkButton;
     public Bounds pickerCancelButton;
-    public Bounds pickerCloseButton;
-    public Bounds pickerClearButton;
+    // public Bounds pickerCloseButton;
+    // public Bounds pickerClearButton;
     public Bounds pickerModeToggleButton;
     public final List<Bounds> pickerPresetBounds = new ArrayList<>();
     public final List<Bounds> pickerRecentBounds = new ArrayList<>();
@@ -187,14 +187,14 @@ public class LayoutEngine {
         int titleY = this.pickerDialog.y + padding;
 
         // Title bar buttons
-        int xBtnWidth = TextUtil.width(font, ColorPickerOverlay.BTN_X);
-        int xX = rightEdgeX - xBtnWidth;
-        this.pickerCloseButton = new Bounds(xX - config.pickerXBtnPadding, titleY - config.pickerXBtnPadding,
-            xBtnWidth + (config.pickerXBtnPadding * 2), font.lineHeight + (config.pickerXBtnPadding * 2));
+        // int xBtnWidth = TextUtil.width(font, ColorPickerOverlay.BTN_X);
+        // int xX = rightEdgeX - xBtnWidth;
+        // this.pickerCloseButton = new Bounds(xX - config.pickerXBtnPadding, titleY - config.pickerXBtnPadding,
+        //     xBtnWidth + (config.pickerXBtnPadding * 2), font.lineHeight + (config.pickerXBtnPadding * 2));
 
         int toggleW = config.pickerModeToggleWidth;
         int toggleH = config.pickerModeToggleHeight;
-        int toggleX = this.pickerCloseButton.x - toggleW - config.engineModeToggleSpacingX;
+        int toggleX = rightEdgeX - toggleW - config.engineModeToggleSpacingX;
         int toggleY = titleY + (font.lineHeight - toggleH) / 2;
         this.pickerModeToggleButton = new Bounds(toggleX, toggleY, toggleW, toggleH);
 
@@ -266,20 +266,20 @@ public class LayoutEngine {
         int btnW = config.pickerButtonWidth;
         int btnH = config.pickerButtonHeight;
 
-        int clearPadX = config.pickerClearBtnPaddingX + config.engineClearButtonSpacingX;
-        int clearPadY = config.pickerClearBtnPaddingY + config.engineClearButtonSpacingY;
-        int clearBoundsH = font.lineHeight + (clearPadY * 2);
+        // int clearPadX = config.pickerClearBtnPaddingX + config.engineClearButtonSpacingX;
+        // int clearPadY = config.pickerClearBtnPaddingY + config.engineClearButtonSpacingY;
+        // int clearBoundsH = font.lineHeight + (clearPadY * 2);
 
-        // Lock clear button to the absolute bottom inner edge of the dialog
-        int clearBoundsY = (py + pH) - padding - clearBoundsH;
+        // // Lock clear button to the absolute bottom inner edge of the dialog
+        // int clearBoundsY = (py + pH) - padding - clearBoundsH;
 
-        if (!this.pickerRecentBounds.isEmpty()) {
-            int clearWidth = TextUtil.width(font, ColorPickerOverlay.BTN_CLEAR);
-            int clearX = visualRightEdgeX - (clearWidth + clearPadX * 2);
-            this.pickerClearButton = new Bounds(clearX, clearBoundsY, clearWidth + (clearPadX * 2), clearBoundsH);
-        }
+        // if (!this.pickerRecentBounds.isEmpty()) {
+        //     int clearWidth = TextUtil.width(font, ColorPickerOverlay.BTN_CLEAR);
+        //     int clearX = visualRightEdgeX - (clearWidth + clearPadX * 2);
+        //     this.pickerClearButton = new Bounds(clearX, clearBoundsY, clearWidth + (clearPadX * 2), clearBoundsH);
+        // }
 
-        int actionBtnY = clearBoundsY - btnH - config.engineActionButtonSpacingY;
+        int actionBtnY = (py + pH) - padding - btnH - config.engineActionButtonSpacingY;
 
         int okX = visualRightEdgeX - btnW;
         int cancelX = okX - btnW - config.engineActionButtonSpacingX;

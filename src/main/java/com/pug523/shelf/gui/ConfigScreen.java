@@ -57,10 +57,10 @@ public class ConfigScreen extends Screen {
     private final List<ActionButtonWidget> footerButtons;
 
     public ConfigScreen(Component title, Screen parent, List<TabNode> roots, List<Profile> profiles, Runnable onApply,
-                        LayoutConfig config) {
+                        LayoutConfig layoutConfig) {
         super(title);
         this.parent = parent;
-        this.layout = new LayoutEngine(config);
+        this.layout = new LayoutEngine(layoutConfig);
 
         this.tabController = new TabTreeController(roots);
         this.scrollController = new ScrollController();

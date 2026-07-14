@@ -129,7 +129,7 @@ public class LayoutConfig {
     // Color tokens
     public int colorScreenBaseBackground = Colors.ALPHA_BLACK_13;
     public int colorHeaderBackground = Colors.ALPHA_WHITE_08;
-    public int colorFooterBackground = Colors.ALPHA_BLACK_53;
+    public int colorFooterBackground = Colors.ALPHA_BLACK_40;
     public int colorTabPanelBackground = Colors.ALPHA_BLACK_20;
     public int colorOptionPanelBackground = Colors.ALPHA_BLACK_26;
     public int colorDescriptionPanelBackground = Colors.ALPHA_BLACK_33;
@@ -142,24 +142,24 @@ public class LayoutConfig {
     public int colorItemSelectedText = Colors.WHITE;
     public int colorItemUnselectedText = Colors.ALPHA_WHITE_60;
     public int colorItemHoverBackground = Colors.ALPHA_WHITE_13;
-    public int colorItemSelectedBackground = Colors.ALPHA_WHITE_27_O;
+    public int colorItemSelectedBackground = Colors.ALPHA_WHITE_27;
 
     public int colorScrollBarTrack = Colors.ALPHA_BLACK_53;
     public int colorScrollBarThumb = Colors.OFF_WHITE;
 
     public int colorButtonBorder = Colors.BORDER_BLACK;
-    public int colorButtonBackground = Colors.BUTTON_GRAY;
-    public int colorButtonBackgroundHover = Colors.BUTTON_GRAY_HOVER;
+    public int colorButtonBackground = Colors.GRAY_0;
+    public int colorButtonBackgroundHover = Colors.GRAY_1;
     public int colorButtonBackgroundDisabled = Colors.ALPHA_BLACK_53;
     public int colorButtonText = Colors.WHITE;
     public int colorButtonTextDisabled = Colors.MUTED_GRAY;
 
     // Boolean Toggle Widget Colors
     public int colorToggleBgOff = Colors.ALPHA_WHITE_08;
-    public int colorToggleBgOn = Colors.GREEN2;
+    public int colorToggleBgOn = Colors.GREEN1;
     public int colorToggleKnob = Colors.WHITE;
-    public int colorToggleBgOffHover = Colors.MIDDLE_GRAY2;
-    public int colorToggleBgOnHover = Colors.GREEN3;
+    public int colorToggleBgOffHover = Colors.MIDDLE_GRAY;
+    public int colorToggleBgOnHover = Colors.GREEN2;
     public int colorToggleBox = Colors.LIGHT_GRAY;
     public int colorToggleBoxHover= Colors.WHITE;
 

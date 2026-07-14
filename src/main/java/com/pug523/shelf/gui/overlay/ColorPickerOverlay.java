@@ -40,8 +40,8 @@ public class ColorPickerOverlay implements ScreenOverlay {
     public static final Component RECENT_TEXT = ComponentCompat.literal("Recent Colors");
     public static final Component BTN_CANCEL = ComponentCompat.literal("Cancel");
     public static final Component BTN_OK = ComponentCompat.literal("OK");
-    public static final Component BTN_CLEAR = ComponentCompat.literal("Clear");
-    public static final Component BTN_X = ComponentCompat.literal("✕").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
+    // public static final Component BTN_CLEAR = ComponentCompat.literal("Clear");
+    // public static final Component BTN_X = ComponentCompat.literal("✕").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
     public static final Component BTN_TOGGLE_HSV = ComponentCompat.literal("Mode: HSV");
     public static final Component BTN_TOGGLE_RGB = ComponentCompat.literal("Mode: RGB");
 
@@ -52,8 +52,8 @@ public class ColorPickerOverlay implements ScreenOverlay {
 
     private final ActionButtonWidget cancelButton = new ActionButtonWidget(BTN_CANCEL, (btn) -> cancel());
     private final ActionButtonWidget okButton = new ActionButtonWidget(BTN_OK, (btn) -> ok());
-    private final ActionButtonWidget clearButton = new ActionButtonWidget(BTN_CLEAR, (btn) -> clear());
-    private final ActionButtonWidget xButton = new ActionButtonWidget(BTN_X, (btn) -> x());
+    // private final ActionButtonWidget clearButton = new ActionButtonWidget(BTN_CLEAR, (btn) -> clear());
+    // private final ActionButtonWidget xButton = new ActionButtonWidget(BTN_X, (btn) -> x());
     private final ActionButtonWidget toggleModeButton = new ActionButtonWidget(BTN_TOGGLE_HSV, this::toggleMode);
 
     // TODO: load from shelf config
@@ -160,11 +160,11 @@ public class ColorPickerOverlay implements ScreenOverlay {
         Bounds okB = layout.pickerOkButton;
         okButton.renderWithBackground(font, gui, layout, okB.x, okB.y, okB.width, okB.height, mouseX, mouseY, COLOR_BTN_OK_BG);
 
-        Bounds clearB = layout.pickerClearButton;
-        clearButton.render(font, gui, layout, clearB.x, clearB.y, clearB.width, clearB.height, mouseX, mouseY);
+        // Bounds clearB = layout.pickerClearButton;
+        // clearButton.render(font, gui, layout, clearB.x, clearB.y, clearB.width, clearB.height, mouseX, mouseY);
 
-        Bounds xB = layout.pickerCloseButton;
-        xButton.render(font, gui, layout, xB.x, xB.y, xB.width, xB.height, mouseX, mouseY);
+        // Bounds xB = layout.pickerCloseButton;
+        // xButton.render(font, gui, layout, xB.x, xB.y, xB.width, xB.height, mouseX, mouseY);
 
         Bounds b = layout.pickerModeToggleButton;
         toggleModeButton.render(font, gui, layout, b.x, b.y, b.width, b.height, mouseX, mouseY);
@@ -183,10 +183,8 @@ public class ColorPickerOverlay implements ScreenOverlay {
 
     private void renderSbSpace(GuiCompat gui, Bounds sb, LayoutConfig cfg) {
         int baseHueRgb = Color.HSBtoRGB(hue, 1.0f, 1.0f) | 0xFF000000;
-        //#if MC >= 12106
-        gui.getGraphics().guiRenderState.addGuiElement(new ColorGradientRenderState(gui, sb.x, sb.maxX, sb.y, sb.maxY,
+        RenderUtil.renderVanillaGuiElement(gui, new ColorGradientRenderState(gui, sb.x, sb.maxX, sb.y, sb.maxY,
             Colors.WHITE, Colors.BLACK, baseHueRgb, Colors.BLACK));
-        //#endif
 
         int hX = sb.x + (int) (this.saturation * sb.width);
         int hY = sb.y + (int) ((1.0f - this.brightness) * sb.height);
@@ -427,16 +425,16 @@ public class ColorPickerOverlay implements ScreenOverlay {
         }
     }
 
-    private void clear() {
-        if (!recentColors.isEmpty()) {
-            recentColors.clear();
-            SoundUtil.clickSound();
-        }
-    }
+    // private void clear() {
+    //     if (!recentColors.isEmpty()) {
+    //         recentColors.clear();
+    //         SoundUtil.clickSound();
+    //     }
+    // }
 
-    private void x() {
-        cancel();
-    }
+    // private void x() {
+    //     cancel();
+    // }
 
     private void toggleMode(ActionButtonWidget btn) {
         this.currentMode = this.currentMode == PickerMode.HSV ? PickerMode.RGB : PickerMode.HSV;
@@ -448,8 +446,8 @@ public class ColorPickerOverlay implements ScreenOverlay {
     public boolean mouseClicked(double mouseX, double mouseY, int button, LayoutEngine layout) {
         if (cancelButton.mouseClicked(mouseX, mouseY, button, 0, layout) ||
             okButton.mouseClicked(mouseX, mouseY, button, 0, layout) ||
-            clearButton.mouseClicked(mouseX, mouseY, button, 0, layout) ||
-            xButton.mouseClicked(mouseX, mouseY, button, 0, layout) ||
+            // clearButton.mouseClicked(mouseX, mouseY, button, 0, layout) ||
+            // xButton.mouseClicked(mouseX, mouseY, button, 0, layout) ||
             toggleModeButton.mouseClicked(mouseX, mouseY, button, 0, layout)) {
             return true;
         }
