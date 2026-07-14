@@ -4,7 +4,9 @@
   "package": "com.pug523.shelf.mixin",
   "compatibilityLevel": "{{COMPATIBILITY_LEVEL}}",
   "client": [
-    "GuiRendererMixin"
+    "BufferSourceMixin",
+    "GuiRendererMixin",
+    "CompositeRenderTypeMixin"
   ],
   "injectors": {
     "defaultRequire": 1
