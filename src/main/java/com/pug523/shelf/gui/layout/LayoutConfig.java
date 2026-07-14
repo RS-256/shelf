@@ -45,7 +45,7 @@ public class LayoutConfig {
     // Capsule Toggle Widget Sizing
     public int capsuleToggleWidth = 30;
     public int capsuleToggleHeight = 15;
-    public int capsuleToggleHitboxPadding = 4;
+    public float capsuleToggleKnobSizeFactor = 0.85f;
 
     // Toggle Action Button Widget Sizing
     public int toggleButtonWidth = 44;

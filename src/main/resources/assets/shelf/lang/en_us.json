@@ -121,8 +121,6 @@
   "shelf.mod.config.option.layout.capsule_toggle_width.desc": "The width of the capsule toggle widget.",
   "shelf.mod.config.option.layout.capsule_toggle_height": "Capsule Toggle Height",
   "shelf.mod.config.option.layout.capsule_toggle_height.desc": "The height of the capsule toggle widget.",
-  "shelf.mod.config.option.layout.capsule_toggle_hitbox_padding": "Capsule Toggle Hitbox Padding",
-  "shelf.mod.config.option.layout.capsule_toggle_hitbox_padding.desc": "Extra padding applied to the capsule toggle's interactive hitbox.",
   "shelf.mod.config.option.layout.toggle_button_width": "Toggle Button Width",
   "shelf.mod.config.option.layout.toggle_button_width.desc": "The width of the toggle action button widget.",
   "shelf.mod.config.option.layout.toggle_button_height": "Toggle Button Height",

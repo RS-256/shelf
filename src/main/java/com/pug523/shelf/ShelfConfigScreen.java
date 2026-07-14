@@ -137,7 +137,6 @@ public class ShelfConfigScreen {
             .addGroup(new OptionGroup(categoryText("layout.widgets"), listOf(
                 SliderWidget.ofInt(new Option<>(optKey("layout.capsule_toggle_width"), d.capsuleToggleWidth, () -> c.capsuleToggleWidth, v -> c.capsuleToggleWidth = v, listOf()), 10, 100, 1),
                 SliderWidget.ofInt(new Option<>(optKey("layout.capsule_toggle_height"), d.capsuleToggleHeight, () -> c.capsuleToggleHeight, v -> c.capsuleToggleHeight = v, listOf()), 5, 40, 1),
-                SliderWidget.ofInt(new Option<>(optKey("layout.capsule_toggle_hitbox_padding"), d.capsuleToggleHitboxPadding, () -> c.capsuleToggleHitboxPadding, v -> c.capsuleToggleHitboxPadding = v, listOf()), 0, 20, 1),
                 SliderWidget.ofInt(new Option<>(optKey("layout.toggle_button_width"), d.toggleButtonWidth, () -> c.toggleButtonWidth, v -> c.toggleButtonWidth = v, listOf()), 20, 150, 1),
                 SliderWidget.ofInt(new Option<>(optKey("layout.toggle_button_height"), d.toggleButtonHeight, () -> c.toggleButtonHeight, v -> c.toggleButtonHeight = v, listOf()), 5, 40, 1),
                 SliderWidget.ofInt(new Option<>(optKey("layout.box_toggle_width"), d.boxToggleWidth, () -> c.boxToggleWidth, v -> c.boxToggleWidth = v, listOf()), 4, 40, 1),
