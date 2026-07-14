@@ -71,6 +71,9 @@ public class ShelfConfigScreen {
         TabNode advancedVideoTweaks = new TabNode(categoryText("advanced_tweaks"))
             .addGroup(new OptionGroup(categoryText("experimental_shaders"), listOf(
                 new ToggleCapsuleWidget(new Option<>(optKey("advanced_tweaks.experimental_shaders.vsync"), defaultConfig.vsync, () -> config.vsync, v -> config.vsync = v, listOf()))
+            )))
+            .addGroup(new OptionGroup(categoryText("debug"), listOf(
+                new ToggleBoxWidget(new Option<>(optKey("advanced_tweaks.debug.render_debug_circle"), defaultConfig.renderDebugCircle, () -> config.renderDebugCircle, v -> config.renderDebugCircle = v, listOf()))
             )));
         // @formatter:on
 

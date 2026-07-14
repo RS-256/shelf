@@ -15,9 +15,10 @@ public class ShelfConfig implements Serializable {
     public double volume = 100.0d;
     public float sensitivity = 1.0f;
     public boolean vsync = false;
+    public boolean renderDebugCircle = false;
     public LayoutConfig layoutConfig = LayoutConfig.createDefault();
 
-    public static final ShelfConfig createDefault() {
+    public static ShelfConfig createDefault() {
         return new ShelfConfig();
     }
 }
