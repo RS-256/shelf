@@ -2,7 +2,7 @@ package com.pug523.shelf.gui;
 
 import java.util.List;
 
-import com.pug523.shelf.gui.widget.OptionWidget;
+import com.pug523.shelf.gui.widget.option.OptionWidget;
 
 import net.minecraft.network.chat.Component;
 
