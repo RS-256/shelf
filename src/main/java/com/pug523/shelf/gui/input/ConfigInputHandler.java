@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.gui.controller.*;
 import com.pug523.shelf.gui.TabNode;
 import com.pug523.shelf.gui.layout.LayoutConfig;
@@ -18,7 +19,6 @@ import com.pug523.shelf.gui.widget.option.OptionWidget;
 
 import com.pug523.shelf.gui.widget.SearchBarWidget;
 import com.pug523.shelf.gui.widget.overlay.OverlayWidget;
-import net.minecraft.util.Mth;
 
 public final class ConfigInputHandler {
     private final TabTreeController tabs;
@@ -140,7 +140,7 @@ public final class ConfigInputHandler {
             return;
         }
 
-        double relativeY = Mth.clamp((mouseY - yStart) / (double) height, 0.0, 1.0);
+        double relativeY = JavaCompat.clamp((mouseY - yStart) / (double) height, 0.0, 1.0);
 
         if (isTab) {
             int totalTabHeight = tabs.totalHeight(cfg);

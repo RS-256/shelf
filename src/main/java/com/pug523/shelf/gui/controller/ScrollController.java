@@ -1,6 +1,6 @@
 package com.pug523.shelf.gui.controller;
 
-import net.minecraft.util.Mth;
+import com.pug523.shelf.compat.JavaCompat;
 
 public final class ScrollController {
     // TODO: description scroll
@@ -17,19 +17,19 @@ public final class ScrollController {
     }
 
     public void scrollTabs(double amount, int contentHeight, int viewportHeight) {
-        tabScroll = Mth.clamp(tabScroll + amount, 0, Math.max(0, contentHeight - viewportHeight));
+        tabScroll = JavaCompat.clamp(tabScroll + amount, 0.0d, Math.max(0.0d, contentHeight - viewportHeight));
     }
 
     public void scrollOptions(double amount, int contentHeight, int viewportHeight) {
-        optionScroll = Mth.clamp(optionScroll + amount, 0, Math.max(0, contentHeight - viewportHeight));
+        optionScroll = JavaCompat.clamp(optionScroll + amount, 0.0d, Math.max(0.0d, contentHeight - viewportHeight));
     }
 
     public void setTabScroll(double value, int contentHeight, int viewportHeight) {
-        tabScroll = Mth.clamp(value, 0, Math.max(0, contentHeight - viewportHeight));
+        tabScroll = JavaCompat.clamp(value, 0.0d, Math.max(0.0d, contentHeight - viewportHeight));
     }
 
     public void setOptionScroll(double value, int contentHeight, int viewportHeight) {
-        optionScroll = Mth.clamp(value, 0, Math.max(0, contentHeight - viewportHeight));
+        optionScroll = JavaCompat.clamp(value, 0.0d, Math.max(0.0d, contentHeight - viewportHeight));
     }
 
     public void reset() {

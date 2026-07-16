@@ -35,7 +35,7 @@ public class RenderUtil {
     private static void addSdfRenderState(GuiCompat gui, float x, float y, float width, float height, float radius,
                                           int color) {
         SdfRenderState renderState = new SdfRenderState(
-            gui.getGraphics().pose(), x, y, x + width, y + height, width, height, radius,
+            gui, x, y, x + width, y + height, width, height, radius,
             color, peekScissorStack(gui)
         );
         renderSdfGuiElement(gui, renderState);

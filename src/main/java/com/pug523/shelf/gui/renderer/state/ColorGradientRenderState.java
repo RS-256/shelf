@@ -1,5 +1,6 @@
 package com.pug523.shelf.gui.renderer.state;
 
+import com.pug523.shelf.compat.Matrix3x2fCompat;
 import com.pug523.shelf.gui.renderer.RenderUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -10,23 +11,13 @@ import com.pug523.shelf.compat.GuiCompat;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 
-//#if MC >= 12106
-import org.joml.Matrix3x2f;
-//#else
-//$$ import com.mojang.blaze3d.vertex.PoseStack;
-//#endif
-
 //#if MC >= 12104
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.RenderPipelines;
 //#endif
 
 public class ColorGradientRenderState implements ShelfGuiElementRenderState {
-    //#if MC >= 12106
-    private final Matrix3x2f pose;
-    //#else
-    //$$ private final PoseStack.Pose pose;
-    //#endif
+    private final Matrix3x2fCompat pose;
     @Nullable
     private final ScreenRectangle bounds;
     @Nullable
@@ -56,11 +47,7 @@ public class ColorGradientRenderState implements ShelfGuiElementRenderState {
 
         GuiGraphicsExtractor graphics = gui.getGraphics();
         this.scissorArea = RenderUtil.peekScissorStack(gui);
-        //#if MC >= 12106
-        this.pose = new Matrix3x2f(graphics.pose());
-        //#else
-        //$$ this.pose = graphics.pose().last().copy();
-        //#endif
+        this.pose = Matrix3x2fCompat.copy(graphics.pose());
         this.bounds = RenderStateUtil.bounds(this.x0, this.y0, this.x1, this.y1, this.pose, this.scissorArea);
     }
 

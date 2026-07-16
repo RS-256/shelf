@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.pug523.shelf.compat.ComponentCompat;
 import com.pug523.shelf.compat.GuiCompat;
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.compat.ScreenCompat;
 import com.pug523.shelf.gui.ConfigScreen;
 import com.pug523.shelf.gui.controller.OverlayController;
@@ -240,10 +241,10 @@ public class TextInputFieldWidget<T> implements ClickableWidget {
                     int startIdx = Math.min(cursorPos, highlightPos);
                     int endIdx = Math.max(cursorPos, highlightPos);
 
-                    String textBeforeStart = rawText.substring(0, Math.clamp(startIdx, 0, rawText.length()));
+                    String textBeforeStart = rawText.substring(0, JavaCompat.clamp(startIdx, 0, rawText.length()));
                     int highlightStartX = drawX + ComponentCompat.width(font, textBeforeStart);
 
-                    String textBeforeEnd = rawText.substring(0, Math.clamp(endIdx, 0, rawText.length()));
+                    String textBeforeEnd = rawText.substring(0, JavaCompat.clamp(endIdx, 0, rawText.length()));
                     int highlightEndX = drawX + ComponentCompat.width(font, textBeforeEnd);
 
                     int highlightY = y - 1;
@@ -252,7 +253,7 @@ public class TextInputFieldWidget<T> implements ClickableWidget {
                     gui.fill(highlightStartX, highlightY, highlightEndX, highlightY + highlightHeight, 0x800000FF);
                 }
 
-                String textBeforeCursor = rawText.substring(0, Math.clamp(cursorPos, 0, rawText.length()));
+                String textBeforeCursor = rawText.substring(0, JavaCompat.clamp(cursorPos, 0, rawText.length()));
                 int cursorOffset = ComponentCompat.width(font, textBeforeCursor);
                 int cursorX = drawX + cursorOffset;
 

@@ -8,6 +8,7 @@ import java.util.function.BiConsumer;
 
 import com.pug523.shelf.compat.ComponentCompat;
 import com.pug523.shelf.compat.GuiCompat;
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.gui.Colors;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
@@ -21,7 +22,6 @@ import com.pug523.shelf.gui.widget.SliderWidget;
 import com.pug523.shelf.gui.widget.option.GuiOption;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 
 public class ColorPickerOverlay extends WindowOverlay {
     private static final int COLOR_TEXT_MUTED = 0xFF6B7280;
@@ -416,8 +416,8 @@ public class ColorPickerOverlay extends WindowOverlay {
         if (currentMode == PickerMode.HSV && this.isDraggingSBSpace) {
             Bounds sb = layout.pickerSbSpace;
             if (sb.width > 0 && sb.height > 0) {
-                float pctX = Mth.clamp((mouseX - sb.x) / (float) sb.width, 0.0f, 1.0f);
-                float pctY = Mth.clamp(1.0f - ((mouseY - sb.y) / (float) sb.height), 0.0f, 1.0f);
+                float pctX = JavaCompat.clamp((mouseX - sb.x) / (float) sb.width, 0.0f, 1.0f);
+                float pctY = JavaCompat.clamp(1.0f - ((mouseY - sb.y) / (float) sb.height), 0.0f, 1.0f);
 
                 this.saturation = pctX;
                 this.brightness = pctY;

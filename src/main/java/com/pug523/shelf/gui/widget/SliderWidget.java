@@ -4,17 +4,16 @@ import java.util.function.Consumer;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.pug523.shelf.compat.GuiCompat;
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.gui.layout.Bounds;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.renderer.RenderUtil;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.util.Mth;
 
 public class SliderWidget implements ClickableWidget {
     public enum Orientation {
-        HORIZONTAL,
-        VERTICAL
+        HORIZONTAL, VERTICAL
     }
 
     private final double min;
@@ -38,7 +37,7 @@ public class SliderWidget implements ClickableWidget {
         this.min = min;
         this.max = max;
         this.step = step;
-        this.value = Mth.clamp(initialValue, min, max);
+        this.value = JavaCompat.clamp(initialValue, min, max);
         this.valueConsumer = valueConsumer;
     }
 
@@ -74,14 +73,15 @@ public class SliderWidget implements ClickableWidget {
     }
 
     public void setValue(double value) {
-        this.value = Mth.clamp(value, min, max);
+        this.value = JavaCompat.clamp(value, min, max);
     }
 
     @Override
-    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX, int mouseY) {
+    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX,
+            int mouseY) {
         this.cachedWidgetBounds = new Bounds(x, y, width, height);
 
-        double progress = Mth.clamp((this.value - min) / (max - min), 0.0, 1.0);
+        double progress = JavaCompat.clamp((this.value - min) / (max - min), 0.0, 1.0);
 
         if (orientation == Orientation.HORIZONTAL) {
             int sliderY = y + (height - barThickness) / 2;
@@ -104,8 +104,10 @@ public class SliderWidget implements ClickableWidget {
 
             if (rounded) {
                 RenderUtil.renderCapsule(gui, sliderX, y, barThickness, height, colorTrack);
-                RenderUtil.renderCapsule(gui, sliderX, progressStart, barThickness, (y + height) - progressStart, colorProgress);
-                RenderUtil.renderCircle(gui, sliderX + (barThickness / 2.0f), progressStart, knobSize / 2.25f, colorKnob);
+                RenderUtil.renderCapsule(gui, sliderX, progressStart, barThickness, (y + height) - progressStart,
+                        colorProgress);
+                RenderUtil.renderCircle(gui, sliderX + (barThickness / 2.0f), progressStart, knobSize / 2.25f,
+                        colorKnob);
             } else {
                 gui.fill(sliderX, y, sliderX + barThickness, y + height, colorTrack);
                 gui.fill(sliderX, progressStart, sliderX + barThickness, y + height, colorProgress);
@@ -129,7 +131,8 @@ public class SliderWidget implements ClickableWidget {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY, LayoutEngine layout) {
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY,
+            LayoutEngine layout) {
         if (button == InputConstants.MOUSE_BUTTON_LEFT && this.isDragging && cachedWidgetBounds != null) {
             updateValueFromMouse(mouseX, mouseY);
             return true;
@@ -153,7 +156,7 @@ public class SliderWidget implements ClickableWidget {
                 newValue = Math.round(newValue / this.step) * this.step;
             }
 
-            newValue = Mth.clamp(newValue, this.min, this.max);
+            newValue = JavaCompat.clamp(newValue, this.min, this.max);
 
             if (newValue != this.value) {
                 this.value = newValue;
@@ -167,16 +170,17 @@ public class SliderWidget implements ClickableWidget {
     private void updateValueFromMouse(double mouseX, double mouseY) {
         double pct;
         if (orientation == Orientation.HORIZONTAL) {
-            pct = Mth.clamp((mouseX - cachedWidgetBounds.x) / (double) cachedWidgetBounds.width, 0.0, 1.0);
+            pct = JavaCompat.clamp((mouseX - cachedWidgetBounds.x) / (double) cachedWidgetBounds.width, 0.0, 1.0);
         } else {
-            pct = Mth.clamp(1.0 - ((mouseY - cachedWidgetBounds.y) / (double) cachedWidgetBounds.height), 0.0, 1.0);
+            pct = JavaCompat.clamp(1.0 - ((mouseY - cachedWidgetBounds.y) / (double) cachedWidgetBounds.height), 0.0,
+                    1.0);
         }
 
         double rawValue = min + (max - min) * pct;
         if (step > 0.0) {
             rawValue = Math.round(rawValue / step) * step;
         }
-        rawValue = Mth.clamp(rawValue, min, max);
+        rawValue = JavaCompat.clamp(rawValue, min, max);
 
         this.value = rawValue;
         this.valueConsumer.accept(rawValue);

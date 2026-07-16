@@ -4,13 +4,13 @@ import java.util.function.Function;
 
 import com.pug523.shelf.compat.ComponentCompat;
 import com.pug523.shelf.compat.GuiCompat;
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 
 import com.pug523.shelf.gui.widget.SliderWidget;
 import com.pug523.shelf.gui.widget.TextInputFieldWidget;
 import net.minecraft.client.gui.Font;
-import net.minecraft.util.Mth;
 
 public class SliderOptionWidget<N extends Number & Comparable<N>> extends OptionWidget<N> {
     private final double min;
@@ -30,50 +30,38 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
         this.step = step.doubleValue();
         this.typeConverter = typeConverter;
 
-        this.slider = new SliderWidget(
-            this.min,
-            this.max,
-            this.step,
-            this.getPendingValue().doubleValue(),
-            this::updateFromSlider
-        );
+        this.slider = new SliderWidget(this.min, this.max, this.step, this.getPendingValue().doubleValue(),
+                this::updateFromSlider);
 
-        this.textField = new TextInputFieldWidget<>(
-            true,
-            str -> {
-                if (str.isEmpty() || str.equals("-") || str.equals(".") || str.equals("-.")) {
-                    return true;
+        this.textField = new TextInputFieldWidget<>(true, str -> {
+            if (str.isEmpty() || str.equals("-") || str.equals(".") || str.equals("-.")) {
+                return true;
+            }
+            try {
+                Double.parseDouble(str);
+                return true;
+            } catch (NumberFormatException ignored) {
+                return false;
+            }
+        }, str -> {
+            try {
+                double rawValue = Double.parseDouble(str);
+                return rawValue >= this.min && rawValue <= this.max;
+            } catch (NumberFormatException ignored) {
+                return false;
+            }
+        }, str -> {
+            try {
+                double rawValue = Double.parseDouble(str);
+                if (this.step > 0.0) {
+                    rawValue = Math.round(rawValue / this.step) * this.step;
                 }
-                try {
-                    Double.parseDouble(str);
-                    return true;
-                } catch (NumberFormatException ignored) {
-                    return false;
-                }
-            },
-            str -> {
-                try {
-                    double rawValue = Double.parseDouble(str);
-                    return rawValue >= this.min && rawValue <= this.max;
-                } catch (NumberFormatException ignored) {
-                    return false;
-                }
-            },
-            str -> {
-                try {
-                    double rawValue = Double.parseDouble(str);
-                    if (this.step > 0.0) {
-                        rawValue = Math.round(rawValue / this.step) * this.step;
-                    }
-                    rawValue = Mth.clamp(rawValue, this.min, this.max);
-                    this.setPendingValue(this.typeConverter.apply(rawValue));
-                    this.slider.setValue(rawValue);
-                } catch (NumberFormatException ignored) {
-                }
-            },
-            null,
-            formatValue(this.getPendingValue().doubleValue())
-        );
+                rawValue = JavaCompat.clamp(rawValue, this.min, this.max);
+                this.setPendingValue(this.typeConverter.apply(rawValue));
+                this.slider.setValue(rawValue);
+            } catch (NumberFormatException ignored) {
+            }
+        }, null, formatValue(this.getPendingValue().doubleValue()));
     }
 
     public static SliderOptionWidget<Integer> ofInt(GuiOption<Integer> option, int min, int max, int step) {
@@ -89,7 +77,8 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
     }
 
     @Override
-    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX, int mouseY) {
+    public void render(Font font, GuiCompat gui, LayoutEngine layout, int x, int y, int width, int height, int mouseX,
+            int mouseY) {
         if (!this.textField.isFocused()) {
             double currentValue = getPendingValue().doubleValue();
             String formatted = formatValue(currentValue);
@@ -98,11 +87,9 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
         }
 
         LayoutConfig cfg = layout.getConfig();
-        this.slider.setOrientation(SliderWidget.Orientation.HORIZONTAL)
-                   .setBarThickness(cfg.sliderHeight)
-                   .setKnobSize(cfg.sliderKnobSize)
-                   .setRounded(cfg.roundedSlider)
-                   .setColors(cfg.colorSliderTrack, cfg.colorSliderProgress, cfg.colorSliderKnob);
+        this.slider.setOrientation(SliderWidget.Orientation.HORIZONTAL).setBarThickness(cfg.sliderHeight)
+                .setKnobSize(cfg.sliderKnobSize).setRounded(cfg.roundedSlider)
+                .setColors(cfg.colorSliderTrack, cfg.colorSliderProgress, cfg.colorSliderKnob);
 
         int sliderX = x + width - cfg.sliderWidth - layout.optionWidgetRightMargin;
 
@@ -112,7 +99,8 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
         if (this.maxTextBoundsWidth == -1) {
             String minStr = formatValue(this.min);
             String maxStr = formatValue(this.max);
-            this.maxTextBoundsWidth = Math.max(ComponentCompat.width(font, minStr), ComponentCompat.width(font, maxStr));
+            this.maxTextBoundsWidth = Math.max(ComponentCompat.width(font, minStr),
+                    ComponentCompat.width(font, maxStr));
         }
 
         String currentText = this.textField.getText();
@@ -169,7 +157,8 @@ public class SliderOptionWidget<N extends Number & Comparable<N>> extends Option
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY, LayoutEngine layout) {
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY,
+            LayoutEngine layout) {
         if (this.textField.isFocused()) {
             return false;
         }

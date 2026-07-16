@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.pug523.shelf.compat.ComponentCompat;
 import com.pug523.shelf.compat.GuiCompat;
+import com.pug523.shelf.compat.JavaCompat;
 import com.pug523.shelf.config.Option;
 import com.pug523.shelf.gui.Colors;
 import com.pug523.shelf.gui.layout.Bounds;
@@ -20,7 +21,6 @@ import com.pug523.shelf.gui.widget.option.OptionWidget;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 
 public class ListEditorOverlay<T> extends WindowOverlay {
     public static final Component TITLE_TEXT = ComponentCompat.literal("Edit List");
@@ -211,7 +211,7 @@ public class ListEditorOverlay<T> extends WindowOverlay {
         int itemHeight = 22;
         int totalContentHeight = itemWidgets.size() * itemHeight;
 
-        scrollOffset = Mth.clamp(scrollOffset, 0, Math.max(0, totalContentHeight - listHeight));
+        scrollOffset = JavaCompat.clamp(scrollOffset, 0.0d, Math.max(0.0d, totalContentHeight - listHeight));
 
         for (int i = 0; i < itemWidgets.size(); i++) {
             int itemY = (int) (listY + (i * itemHeight) - scrollOffset);

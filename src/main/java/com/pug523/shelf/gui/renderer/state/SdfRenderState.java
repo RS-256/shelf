@@ -2,10 +2,11 @@ package com.pug523.shelf.gui.renderer.state;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.pug523.shelf.compat.GuiCompat;
+import com.pug523.shelf.compat.Matrix3x2fCompat;
 import com.pug523.shelf.gui.renderer.RenderPipelines;
 import com.pug523.shelf.gui.renderer.shader.UniformApplier;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
-import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fc;
 
 import org.jspecify.annotations.NonNull;
@@ -19,8 +20,6 @@ import com.pug523.shelf.gui.renderer.SdfParamBufferPool;
 import java.nio.ByteBuffer;
 
 import org.lwjgl.system.MemoryStack;
-//#else
-//$$ import com.mojang.blaze3d.vertex.PoseStack;
 //#endif
 
 //#if MC >= 12104
@@ -35,11 +34,7 @@ public class SdfRenderState implements ShelfGuiElementRenderState, UniformApplie
     private final GpuBufferSlice sdfParamsBufferSlice;
     //#endif
 
-    //#if MC >= 12106
-    public final Matrix3x2f pose;
-    //#else
-    //$$ public final PoseStack.Pose pose;
-    //#endif
+    public final Matrix3x2fCompat pose;
     public final float x0;
     public final float y0;
     public final float x1;
@@ -51,22 +46,10 @@ public class SdfRenderState implements ShelfGuiElementRenderState, UniformApplie
     private final @Nullable ScreenRectangle scissorArea;
     private final @Nullable ScreenRectangle bounds;
 
-    // @formatter:off
-    //#if MC >= 12106
-    public SdfRenderState(Matrix3x2fc pose, float x0, float y0,
+    public SdfRenderState(GuiCompat gui, float x0, float y0,
                           float x1, float y1, float width, float height, float radius, int color,
                           @Nullable ScreenRectangle scissorArea, @Nullable ScreenRectangle bounds) {
-    //#else
-    //$$ public SdfRenderState(PoseStack pose, float x0, float y0,
-    //$$                       float x1, float y1, float width, float height, float radius, int color,
-    //$$                       @Nullable ScreenRectangle scissorArea, @Nullable ScreenRectangle bounds) {
-    //#endif
-    // @formatter:on
-        //#if MC >= 12106
-        this.pose = new Matrix3x2f(pose);
-        //#else
-        //$$ this.pose = pose.last().copy();
-        //#endif
+        this.pose = Matrix3x2fCompat.copy(gui.getGraphics().pose());
         this.x0 = x0;
         this.y0 = y0;
         this.x1 = x1;
@@ -89,24 +72,13 @@ public class SdfRenderState implements ShelfGuiElementRenderState, UniformApplie
         //#endif
     }
 
-    // @formatter:off
-    //#if MC >= 12106
-    public SdfRenderState(Matrix3x2fc pose, float x0, float y0,
+    public SdfRenderState(GuiCompat gui, float x0, float y0,
                           float x1, float y1, float width, float height, float radius, int color,
                           @Nullable ScreenRectangle scissorArea) {
 
-        this(pose, x0, y0, x1, y1, width, height, radius, color, scissorArea,
-            RenderStateUtil.bounds((int) x0, (int) y0, (int) x1, (int) y1, pose, scissorArea));
+        this(gui, x0, y0, x1, y1, width, height, radius, color, scissorArea,
+            RenderStateUtil.bounds((int) x0, (int) y0, (int) x1, (int) y1, new Matrix3x2fCompat(gui.getGraphics().pose()), scissorArea));
     }
-    //#else
-    //$$ public SdfRenderState(PoseStack pose, float x0, float y0,
-    //$$                       float x1, float y1, float width, float height, float radius, int color,
-    //$$                       @Nullable ScreenRectangle scissorArea) {
-    //$$      this(pose, x0, y0, x1, y1, width, height, radius, color, scissorArea,
-    //$$          RenderStateUtil.bounds((int) x0, (int) y0, (int) x1, (int) y1, pose.last(), scissorArea));
-    //$$ }
-    //#endif
-    // @formatter:on
 
     //#if MC >= 12104
     @Override
