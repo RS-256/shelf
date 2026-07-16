@@ -229,13 +229,33 @@ public class LayoutEngine {
         // RGBA Sliders
         int rgbSliderW = sbSize + spacing + sliderW;
         int rgbSliderH = config.pickerRgbSliderHeight;
-        int totalSlidersH = rgbSliderH * 4;
-        int rgbSpacing = (sbSize - totalSlidersH) / 3;
 
-        this.pickerRSlider = new Bounds(sbX, sbY, rgbSliderW, rgbSliderH);
-        this.pickerGSlider = new Bounds(sbX, sbY + rgbSliderH + rgbSpacing, rgbSliderW, rgbSliderH);
-        this.pickerBSlider = new Bounds(sbX, sbY + (rgbSliderH + rgbSpacing) * 2, rgbSliderW, rgbSliderH);
-        this.pickerAlphaSliderHorizontal = new Bounds(sbX, sbY + (rgbSliderH + rgbSpacing) * 3, rgbSliderW, rgbSliderH);
+
+        int labelHeight = font.lineHeight;
+        int labelToSliderGap = 2;
+        int blockGap = 8;
+        int singleBlockHeight = labelHeight + labelToSliderGap + rgbSliderH + blockGap;
+
+        int currentY = sbY;
+
+        // Red Slider
+        int rSliderY = currentY + labelHeight + labelToSliderGap;
+        this.pickerRSlider = new Bounds(sbX, rSliderY, rgbSliderW, rgbSliderH);
+        currentY += singleBlockHeight;
+
+        // Green Slider
+        int gSliderY = currentY + labelHeight + labelToSliderGap;
+        this.pickerGSlider = new Bounds(sbX, gSliderY, rgbSliderW, rgbSliderH);
+        currentY += singleBlockHeight;
+
+        // Blue Slider
+        int bSliderY = currentY + labelHeight + labelToSliderGap;
+        this.pickerBSlider = new Bounds(sbX, bSliderY, rgbSliderW, rgbSliderH);
+        currentY += singleBlockHeight;
+
+        // Alpha Slider (Horizontal)
+        int aSliderY = currentY + labelHeight + labelToSliderGap;
+        this.pickerAlphaSliderHorizontal = new Bounds(sbX, aSliderY, rgbSliderW, rgbSliderH);
 
         // Right side content: Top-to-bottom stack layout
         int swatW = config.pickerSwatWidth;

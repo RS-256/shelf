@@ -198,6 +198,7 @@ public class ColorPickerOverlay extends WindowOverlay {
             renderRgbSliders(font, gui, layout, cfg, mouseX, mouseY);
 
             Bounds aB = layout.pickerAlphaSliderHorizontal;
+            gui.text(font, ComponentCompat.literal("Alpha"), aB.x, aB.y - font.lineHeight - 1, COLOR_TEXT_LABEL, false);
             renderAlphaBarBackground(gui, aB, cfg, true);
             this.alphaSliderHorizontal.render(font, gui, layout, aB.x, aB.y, aB.width, aB.height, mouseX, mouseY);
         }
@@ -277,7 +278,9 @@ public class ColorPickerOverlay extends WindowOverlay {
     }
 
     private void renderRgbSliders(Font font, GuiCompat gui, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY) {
+        final int labelColor = COLOR_TEXT_LABEL;
         Bounds rB = layout.pickerRSlider;
+        gui.text(font, ComponentCompat.literal("Red"), rB.x, rB.y - font.lineHeight - 1, labelColor, false);
         for (int i = 0; i < rB.width; i++) {
             int rStep = (int) ((i / (float) rB.width) * 255.0f);
             gui.fill(rB.x + i, rB.y, rB.x + i + 1, rB.maxY, 0xFF000000 | (rStep << 16) | (green << 8) | blue);
@@ -285,6 +288,7 @@ public class ColorPickerOverlay extends WindowOverlay {
         this.rSlider.render(font, gui, layout, rB.x, rB.y, rB.width, rB.height, mouseX, mouseY);
 
         Bounds gB = layout.pickerGSlider;
+        gui.text(font, ComponentCompat.literal("Green"), gB.x, gB.y - font.lineHeight - 1, labelColor, false);
         for (int i = 0; i < gB.width; i++) {
             int gStep = (int) ((i / (float) gB.width) * 255.0f);
             gui.fill(gB.x + i, gB.y, gB.x + i + 1, gB.maxY, 0xFF000000 | (red << 16) | (gStep << 8) | blue);
@@ -292,6 +296,7 @@ public class ColorPickerOverlay extends WindowOverlay {
         this.gSlider.render(font, gui, layout, gB.x, gB.y, gB.width, gB.height, mouseX, mouseY);
 
         Bounds bB = layout.pickerBSlider;
+        gui.text(font, ComponentCompat.literal("Blue"), bB.x, bB.y - font.lineHeight - 1, labelColor, false);
         for (int i = 0; i < bB.width; i++) {
             int bStep = (int) ((i / (float) bB.width) * 255.0f);
             gui.fill(bB.x + i, bB.y, bB.x + i + 1, bB.maxY, 0xFF000000 | (red << 16) | (green << 8) | bStep);
