@@ -10,7 +10,9 @@ import com.pug523.shelf.gui.renderer.shader.UniformRegistry;
 import com.pug523.shelf.gui.renderer.state.SdfRenderState;
 import com.pug523.shelf.gui.renderer.RenderPipelines;
 import com.pug523.shelf.gui.renderer.SdfParamBufferPool;
+
 import java.util.List;
+
 import net.minecraft.client.gui.render.GuiRenderer;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import org.spongepowered.asm.mixin.Final;
@@ -104,14 +106,7 @@ public class GuiRendererMixin {
     //$$     )
     //$$ )
     //#endif
-    private void applyUniforms(CallbackInfo ci, @Local(name = "renderPass") RenderPass renderPass,
-                               // @formatter:off
-                               //#if MC >= 260000
-                               @Local(name = "i") int i) {
-                               //#else
-                               //$$ @Local(name = "k") int i) {
-                               //#endif
-                               // @formatter:on
+    private void applyUniforms(CallbackInfo ci, @Local RenderPass renderPass, @Local(ordinal = 2) int i) {
         UniformRegistry.applyAndRemove(i, renderPass);
     }
 
