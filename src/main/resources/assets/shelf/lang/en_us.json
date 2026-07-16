@@ -32,7 +32,13 @@
   "shelf.mod.config.option.debug.enum": "Debug Enum",
   "shelf.mod.config.option.debug.enum.desc": "A generic list iteration selector option used for debugging.",
   "shelf.mod.config.option.debug.keybind": "Debug Keybind",
-  "shelf.mod.config.option.debug.keybind.desc": "A multi-target inputs registration widget used for debugging.",
+  "shelf.mod.config.option.debug.keybind.desc": "A multi-target keybind option used for debugging.",
+  "shelf.mod.config.option.debug.string_list": "Debug String List",
+  "shelf.mod.config.option.debug.string_list.desc": "A list of string options used for debugging.",
+  "shelf.mod.config.option.debug.integer_list": "Debug Integer List",
+  "shelf.mod.config.option.debug.integer_list.desc": "A list of integer options used for debugging.",
+  "shelf.mod.config.option.debug.color": "Debug Color",
+  "shelf.mod.config.option.debug.color.desc": "A color option used for debugging.",
 
   "shelf.mod.config.option.layout": "Layout Settings",
 
