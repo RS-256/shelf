@@ -7,6 +7,7 @@ import com.mojang.blaze3d.shaders.UniformType;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.pug523.shelf.compat.IdentifierCompat;
+import com.pug523.shelf.gui.renderer.shader.ShaderIds;
 import net.minecraft.resources.Identifier;
 
 //#if MC >= 260200

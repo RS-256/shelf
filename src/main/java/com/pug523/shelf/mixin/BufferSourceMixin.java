@@ -26,23 +26,28 @@ import com.pug523.shelf.Shelf;
 //$$ @Mixin(MultiBufferSource.BufferSource.class)
 //#endif
 public class BufferSourceMixin {
-    //#if 12104 <= MC && MC <= 12105
+    //#if MC <= 12105
+    //#if 12104 <= MC
     //$$ @Inject(method = "endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V", at = @At("HEAD"))
     //$$ private void captureSdfState(RenderType renderType, BufferBuilder bufferBuilder, CallbackInfo ci) {
     //$$     if (renderType instanceof SdfRenderType sdfType) {
     //$$         UniformRegistry.push(sdfType.getSdfState());
     //$$     }
     //$$ }
-
     //$$ @Inject(method = "endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V", at = @At("RETURN"))
     //$$ private void clearSdfState(RenderType renderType, BufferBuilder bufferBuilder, CallbackInfo ci) {
     //$$     if (renderType instanceof SdfRenderType) {
     //$$         UniformRegistry.pop();
     //$$     }
     //$$ }
-    //#elseif MC <= 12103
+    //#else
+    //#if 12100 <= MC
     //$$ @Inject(method = "endBatch(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/BufferBuilder;)V", at = @At("HEAD"))
     //$$ private void applySdfUniforms(RenderType renderType, BufferBuilder bufferBuilder, CallbackInfo ci) {
+    //#else
+    //$$ @Inject(method = "endBatch(Lnet/minecraft/client/renderer/RenderType;)V", at = @At("HEAD"))
+    //$$ private void applySdfUniforms(RenderType renderType, CallbackInfo ci) {
+    //#endif
     //$$     if (renderType instanceof SdfRenderType sdfType) {
     //$$         Uniform sdfParams = RenderTypes.sdfParamsUniform();
     //$$         if (sdfParams != null) {
@@ -50,5 +55,6 @@ public class BufferSourceMixin {
     //$$         }
     //$$     }
     //$$ }
+    //#endif
     //#endif
 }

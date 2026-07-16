@@ -1,7 +1,6 @@
 package com.pug523.shelf.gui.renderer.shader;
 
 //#if MC <= 12105
-//$$ import com.mojang.blaze3d.vertex.MeshData;
 //$$ import com.mojang.blaze3d.vertex.VertexFormat;
 //$$ import net.minecraft.client.renderer.RenderType;
 //$$ import com.pug523.shelf.gui.renderer.state.SdfRenderState;
@@ -9,6 +8,12 @@ package com.pug523.shelf.gui.renderer.shader;
 //$$ import com.mojang.blaze3d.pipeline.RenderTarget;
 //$$ import com.mojang.blaze3d.pipeline.RenderPipeline;
 //$$ import com.mojang.blaze3d.systems.RenderPass;
+//#endif
+//#if MC >= 12100
+//$$ import com.mojang.blaze3d.vertex.MeshData;
+//#else
+//$$ import com.mojang.blaze3d.vertex.BufferBuilder;
+//$$ import com.mojang.blaze3d.vertex.VertexSorting;
 //#endif
 //#endif
 
@@ -26,9 +31,12 @@ public class SdfRenderType {
     //#if MC >= 12104
     //$$     super(name, parentToken.bufferSize(), parentToken.affectsCrumbling(), parentToken.sortOnUpload(),
     //$$         () -> {}, () -> {});
-    //#else
+    //#elseif MC >= 12100
     //$$     super(name, parentToken.format(), parentToken.mode(), parentToken.bufferSize(), parentToken.affectsCrumbling(), parentToken.sortOnUpload(),
-    //$$     () -> {}, () -> {});
+    //$$         () -> {}, () -> {});
+    //#else
+    //$$     super(name, parentToken.format(), parentToken.mode(), parentToken.bufferSize(), parentToken.affectsCrumbling(), parentToken.sortOnUpload,
+    //$$         () -> {}, () -> {});
     //#endif
     //$$     this.parentToken = parentToken;
     //$$     this.sdfState = sdfState;
@@ -38,10 +46,17 @@ public class SdfRenderType {
     //$$     return this.sdfState;
     //$$ }
 
+    //#if MC >= 12100
     //$$ @Override
     //$$ public void draw(MeshData meshData) {
     //$$     this.parentToken.draw(meshData);
     //$$ }
+    //#else
+    //$$ @Override
+    //$$ public void end(BufferBuilder bufferBuilder, VertexSorting vertexSorting) {
+    //$$     this.parentToken.end(bufferBuilder, vertexSorting);
+    //$$ }
+    //#endif
 
     //#if MC >= 12104
     //$$ @Override

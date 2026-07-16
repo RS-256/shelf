@@ -11,6 +11,7 @@ package com.pug523.shelf.gui.renderer;
     //$$ import com.mojang.blaze3d.vertex.PoseStack;
     //#else
     //$$ import com.mojang.blaze3d.shaders.Uniform;
+    //$$ import com.pug523.shelf.gui.renderer.shader.ShaderIds;
     //$$ import net.minecraft.client.Minecraft;
     //#endif
 //#endif

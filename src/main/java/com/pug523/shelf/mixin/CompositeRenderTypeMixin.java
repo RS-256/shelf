@@ -2,8 +2,7 @@ package com.pug523.shelf.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
 
-// @formatter:off
-//#if MC <= 12105
+//#if 12104 <= MC && MC <= 12105
 //$$ import net.minecraft.client.renderer.RenderType;
 //$$ import com.pug523.shelf.gui.renderer.RenderPipelines;
 //$$ import com.pug523.shelf.gui.renderer.shader.UniformRegistry;
@@ -14,25 +13,19 @@ import org.spongepowered.asm.mixin.Mixin;
 //$$ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 //$$ import org.spongepowered.asm.mixin.Final;
 //$$ import org.spongepowered.asm.mixin.Shadow;
-    //#if MC >= 12104
-    //$$ import com.mojang.blaze3d.pipeline.RenderPipeline;
-    //$$ import com.mojang.blaze3d.systems.RenderPass;
-    //#endif
+//$$ import com.mojang.blaze3d.pipeline.RenderPipeline;
+//$$ import com.mojang.blaze3d.systems.RenderPass;
 //#else
 import com.pug523.shelf.Shelf;
 //#endif
-// @formatter:on
 
-//#if MC <= 12105
+//#if 12104 <= MC && MC <= 12105
 //$$ @Mixin(targets = "net.minecraft.client.renderer.RenderType$CompositeRenderType")
 //#else
 @Mixin(Shelf.class)
 //#endif
 public class CompositeRenderTypeMixin {
-    // @formatter:off
-    //#if MC <= 12105
-
-    //#if MC >= 12104
+    //#if 12104 <= MC && MC <= 12105
     //$$ @Shadow @Final private RenderPipeline renderPipeline;
     //$$ @Inject(
     //$$         method = "draw(Lnet/mojang/blaze3d/vertex/MeshData;)V",
@@ -47,6 +40,4 @@ public class CompositeRenderTypeMixin {
     //$$     }
     //$$ }
     //#endif
-    //#endif
-    // @formatter:on
 }
