@@ -1,0 +1,20 @@
+name: Feature Request
+description: Suggest an idea or new feature/widget
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear description of what the limitation is.
+      placeholder: e.g., I'm frustrated because there is no direct slider for Hue adjustment in the existing widgets...
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear description of what you want to happen or how you expect the widget to behave.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: Any alternative solutions or features you've thought of.
