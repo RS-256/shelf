@@ -3,27 +3,25 @@ package com.pug523.shelf.gui.renderer;
 import java.util.List;
 
 import com.pug523.shelf.Shelf;
+import com.pug523.shelf.compat.ComponentCompat;
 import com.pug523.shelf.compat.GuiCompat;
 import com.pug523.shelf.compat.IdentifierCompat;
 import com.pug523.shelf.compat.ProfilerCompat;
 import com.pug523.shelf.config.Option;
 import com.pug523.shelf.gui.ConfigScreen;
 import com.pug523.shelf.gui.TabNode;
-import com.pug523.shelf.gui.controller.ConfigChangeController;
-import com.pug523.shelf.gui.controller.OptionFocusController;
-import com.pug523.shelf.gui.controller.ScrollController;
-import com.pug523.shelf.gui.controller.TabTreeController;
+import com.pug523.shelf.gui.controller.*;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.layout.Bounds;
 import com.pug523.shelf.gui.layout.OptionRowLayout;
 import com.pug523.shelf.gui.model.OptionContext;
 import com.pug523.shelf.gui.model.RenderableItem;
-import com.pug523.shelf.gui.controller.OverlayController;
-import com.pug523.shelf.gui.overlay.ScreenOverlay;
+import com.pug523.shelf.gui.widget.overlay.OverlayWidget;
 import com.pug523.shelf.gui.text.TextUtil;
 import com.pug523.shelf.gui.widget.ActionButtonWidget;
-import com.pug523.shelf.gui.widget.OptionWidget;
+import com.pug523.shelf.gui.widget.option.OptionWidget;
+import com.pug523.shelf.gui.widget.SearchBarWidget;
 
 import net.minecraft.ChatFormatting;
 //#if MC >= 12106
@@ -33,40 +31,66 @@ import net.minecraft.client.renderer.RenderPipelines;
 //#elseif MC >= 11500
 //$$ import com.mojang.blaze3d.systems.RenderSystem;
 //#endif
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 public class ConfigScreenRenderer {
     private static final Identifier RESET_BUTTON_TEXTURE = IdentifierCompat.ofShelf("textures/gui/reset_button.png");
+    private static final int INVALID_MOUSE_POSITION = -8000;
 
-    public void render(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, int mouseX, int mouseY, float partialTick, TabTreeController tabs, OptionContext context, OptionFocusController focus, ScrollController scrolls, ConfigChangeController change, OverlayController overlay) {
+    public void render(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, int mouseX, int mouseY, float partialTick, TabTreeController tabs, OptionContext context, OptionFocusController focus, ScrollController scrolls, ConfigChangeController change, OverlayController overlay, SearchBarController searchBar) {
         ProfilerFiller profiler = ProfilerCompat.getProfiler();
-        profiler.push("shelf_config_screen_render");
+        profiler.push("shelf_screen_render");
 
         boolean hasOverlay = overlay.hasActiveOverlay();
-        int renderMouseX = hasOverlay ? -999 : mouseX;
-        int renderMouseY = hasOverlay ? -999 : mouseY;
+        int renderMouseX = hasOverlay ? INVALID_MOUSE_POSITION : mouseX;
+        int renderMouseY = hasOverlay ? INVALID_MOUSE_POSITION : mouseY;
 
-        boolean hasChanges = change.isDirty();
-        screen.getFooterButtons().get(0).setEnabled(hasChanges); // undoButton
-        screen.getFooterButtons().get(1).setEnabled(hasChanges); // applyButton
+        boolean dirty = change.isDirty();
+        screen.getFooterButtons().get(0).setEnabled(dirty); // undoButton
+        screen.getFooterButtons().get(1).setEnabled(dirty); // applyButton
 
         LayoutConfig cfg = layout.getConfig();
 
+        profiler.push("filter options");
+        List<RenderableItem> filteredItems = searchBar.getFilteredOptions();
+        profiler.popPush("filter tabs");
+        List<TabNode> filteredTabs = searchBar.getFilteredTabs();
+
+        profiler.popPush("perform dynamic layout");
+        layout.performDynamicLayout(filteredTabs, filteredItems, cfg);
+
+        profiler.popPush("panels");
         renderPanels(gui, screen, layout, cfg);
-        renderHeader(gui, screen, layout, cfg);
+        profiler.popPush("header");
+        renderHeader(gui, screen, layout, cfg, renderMouseX, renderMouseY);
+        profiler.popPush("footer");
         renderFooter(gui, screen, layout, cfg, renderMouseX, renderMouseY);
-        renderTabs(gui, screen, layout, cfg, renderMouseX, renderMouseY, tabs, scrolls);
-        renderOptions(gui, screen, layout, cfg, renderMouseX, renderMouseY, context, focus, scrolls);
-        renderDescription(gui, screen, layout, cfg, context.items(), focus);
-        renderOverlay(gui, screen, layout, cfg, mouseX, mouseY, partialTick, overlay);
+        profiler.popPush("tabs");
+        renderTabs(gui, screen, layout, cfg, renderMouseX, renderMouseY, tabs, filteredTabs, scrolls);
+        profiler.popPush("options");
+        renderOptions(gui, screen, layout, cfg, renderMouseX, renderMouseY, filteredItems, focus, scrolls);
+        profiler.popPush("description");
+        renderDescription(gui, screen, layout, cfg, filteredItems, focus);
+        profiler.popPush("overlays");
+        renderOverlays(gui, screen, layout, cfg, mouseX, mouseY, partialTick, overlay);
+        profiler.pop();
 
         // For debug
-        if (Shelf.CONFIG.getConfig().renderDebugCircle) {
+        if (Shelf.CONFIG.getConfig().debugBoolean) {
+            profiler.push("debug");
             RenderUtil.renderCircle(gui, 300.0f, 150.0f, 20.0f, 0xC000FF00);
+            profiler.pop();
         }
 
         profiler.pop();
+    }
+
+    public void rebuildWidgets(OptionContext context, LayoutEngine layout) {
+        // TODO: add rebuild tabs, descriptions, overlays, etc.
+        // tabs.getFlat().forEach(tab -> tab.rebuildWidget(layout));
+        context.streamOptionWidgets().forEach(widget -> widget.rebuildWidget(layout));
     }
 
     private void renderPanels(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg) {
@@ -76,17 +100,22 @@ public class ConfigScreenRenderer {
         gui.fill(layout.descArea.x, layout.descArea.y, layout.descArea.maxX, layout.descArea.maxY, cfg.colorDescriptionPanelBackground);
     }
 
-    private void renderHeader(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg) {
+    private void renderHeader(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY) {
         gui.fill(layout.headerArea.x, layout.headerArea.y, layout.headerArea.maxX, layout.headerArea.maxY, cfg.colorHeaderBackground);
         int textY = (layout.headerArea.height - screen.getFont().lineHeight) / 2 + 1;
         gui.text(screen.getFont(), screen.getTitle(), cfg.textPaddingX, textY, cfg.colorTextPrimary, false);
+
+        SearchBarWidget searchBar = screen.getSearchBarWidget();
+        int searchBarX = layout.headerArea.maxX - cfg.searchBarWidth - cfg.textPaddingX;
+        int searchBarHeight = screen.getFont().lineHeight + 4;
+        searchBar.render(screen.getFont(), gui, layout, searchBarX, textY, cfg.searchBarWidth, searchBarHeight, mouseX, mouseY);
     }
 
     private void renderFooter(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY) {
         gui.fill(layout.footerArea.x, layout.footerArea.y, layout.footerArea.maxX, layout.footerArea.maxY, cfg.colorFooterBackground);
 
         List<ActionButtonWidget> footerButtons = screen.getFooterButtons();
-        if (footerButtons == null) return;
+        if (footerButtons == null || layout.footerButtonBounds.size() != footerButtons.size()) return;
 
         for (int i = 0; i < footerButtons.size(); i++) {
             Bounds btnBounds = layout.footerButtonBounds.get(i);
@@ -96,21 +125,20 @@ public class ConfigScreenRenderer {
         }
     }
 
-    private void renderTabs(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY, TabTreeController tabs, ScrollController scrolls) {
+    private void renderTabs(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY, TabTreeController tabs, List<TabNode> filteredTabs, ScrollController scrolls) {
         gui.enableScissor(layout.tabArea.x, layout.tabArea.y, layout.tabArea.maxX, layout.tabArea.maxY);
 
-        List<TabNode> flat = tabs.getFlat();
         double tabScroll = scrolls.getTabScroll();
         int textOffset = (cfg.tabItemHeight - screen.getFont().lineHeight) / 2;
 
-        for (int i = 0; i < flat.size(); i++) {
+        for (int i = 0; i < filteredTabs.size(); i++) {
             if (i >= layout.tabItemBounds.size())
                 break;
 
-            TabNode node = flat.get(i);
+            TabNode node = filteredTabs.get(i);
             Bounds scrolledBounds = layout.getScrolledTabBounds(i, tabScroll);
 
-            if (scrolledBounds.y + scrolledBounds.height < layout.tabArea.y + 1 || scrolledBounds.y > screen.height) {
+            if (scrolledBounds.y + scrolledBounds.height < layout.tabArea.y + cfg.tabScissorClipPaddingY || scrolledBounds.y > screen.height) {
                 continue;
             }
 
@@ -129,35 +157,49 @@ public class ConfigScreenRenderer {
             }
 
             int itemX = cfg.textPaddingX + (node.getDepth() * cfg.tabTreeIndentation);
-            int centerY = scrolledBounds.y + scrolledBounds.height / 2 + 1;
+            int centerY = scrolledBounds.y + scrolledBounds.height / 2 + cfg.engineTextHeightOffset;
             if (node.hasChildren()) {
                 if (node.isExpanded()) {
-                    RenderUtil.renderDownwardArrow(gui, itemX + cfg.tabArrowOffsetX, centerY - 3, color);
+                    RenderUtil.renderDownwardArrow(gui, itemX + cfg.tabArrowOffsetX, centerY - cfg.tabArrowDownwardOffsetY, color);
                 } else {
-                    RenderUtil.renderRightwardArrow(gui, itemX + cfg.tabArrowOffsetX + 1, centerY - 4, color);
+                    RenderUtil.renderRightwardArrow(gui, itemX + cfg.tabArrowOffsetX + cfg.tabArrowRightwardOffsetX, centerY - cfg.tabArrowRightwardOffsetY, color);
                 }
             }
             gui.text(screen.getFont(), node.getName(), itemX + cfg.tabTextOffsetX, scrolledBounds.y + textOffset, color, false);
         }
         gui.disableScissor();
 
-        renderScrollbar(gui, layout, layout.tabScrollbarTrack, tabScroll, tabs.totalHeight(cfg), cfg);
+        renderScrollbar(gui, layout, layout.tabScrollbarTrack, tabScroll, layout.totalTabHeight, cfg);
     }
 
-    private void renderOptions(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY, OptionContext context, OptionFocusController focus, ScrollController scrolls) {
+    private void renderOptions(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY, List<RenderableItem> filteredItems, OptionFocusController focus, ScrollController scrolls) {
         gui.enableScissor(layout.optionArea.x, layout.optionArea.y, layout.optionArea.maxX, layout.optionArea.maxY);
 
-        List<RenderableItem> items = context.items();
-        double optionScroll = scrolls.getOptionScroll();
+        boolean hasValidOptions = filteredItems.stream().anyMatch(item -> !item.isHeader());
+        if (filteredItems.isEmpty() || !hasValidOptions) {
+            Component noResultsText = TextUtil.guiText("no_results");
+            int textWidth = ComponentCompat.width(screen.getFont(), noResultsText);
+            int centerX = layout.optionArea.x + (layout.optionArea.width - textWidth) / 2;
+            int centerY = layout.optionArea.y + (layout.optionArea.height - screen.getFont().lineHeight) / 2 + 1;
+            gui.text(screen.getFont(), noResultsText, centerX, centerY, cfg.colorTextDisabled, false);
+            gui.disableScissor();
+            return;
+        }
 
-        for (int i = 0; i < items.size(); i++) {
+        double optionScroll = scrolls.getOptionScroll();
+        int focusedIdx = focus.getFocused();
+
+        RenderableItem focusedItem = null;
+        OptionRowLayout focusedRow = null;
+
+        for (int i = 0; i < filteredItems.size(); i++) {
             if (i >= layout.optionRows.size()) break;
 
-            RenderableItem item = items.get(i);
+            RenderableItem item = filteredItems.get(i);
             OptionRowLayout row = layout.optionRows.get(i);
 
             Bounds scrolledRow = layout.getScrolledOptionBounds(row.rowBounds, optionScroll);
-            if (scrolledRow.y + scrolledRow.height < layout.optionArea.y + 1 || scrolledRow.y > layout.optionArea.maxY) {
+            if (scrolledRow.y + scrolledRow.height < layout.optionArea.y + cfg.tabScissorClipPaddingY || scrolledRow.y > layout.optionArea.maxY) {
                 continue;
             }
 
@@ -172,17 +214,21 @@ public class ConfigScreenRenderer {
             Option<?> option = widget != null ? widget.getOption() : null;
             if (widget == null || option == null || row.resetButtonBounds == null) continue;
 
-            boolean selected = focus.getFocused() == i;
+            boolean selected = i == focusedIdx;
+
+            if (selected) {
+                focusedItem = item;
+                focusedRow = row;
+                continue;
+            }
+
             boolean hovered = mouseX >= layout.optionArea.x + 1 && mouseX < layout.optionArea.x + scrolledRow.width && mouseY >= scrolledRow.y && mouseY < scrolledRow.y + scrolledRow.height;
 
             if (hovered) {
                 gui.fill(layout.optionArea.x, scrolledRow.y, layout.optionArea.x + scrolledRow.width, scrolledRow.y + scrolledRow.height, cfg.colorItemHoverBackground);
             }
-            if (selected) {
-                gui.fill(layout.optionArea.x, scrolledRow.y, layout.optionArea.x + scrolledRow.width, scrolledRow.y + scrolledRow.height, cfg.colorItemSelectedBackground);
-            }
 
-            int color = selected ? cfg.colorItemSelectedText : cfg.colorItemUnselectedText;
+            int color = cfg.colorItemUnselectedText;
             gui.text(screen.getFont(), option.getName(), row.textX, textY, color, false);
 
             gui.enableScissor(layout.optionArea.x, layout.optionArea.y, layout.optionArea.maxX, layout.optionArea.maxY);
@@ -192,25 +238,55 @@ public class ConfigScreenRenderer {
             // Reset Button Area
             Bounds scrolledReset = layout.getScrolledResetButtonBounds(row.resetButtonBounds, optionScroll);
             boolean resetHovered = scrolledReset.contains(mouseX, mouseY);
-            boolean canReset = option.isPendingModifiedFromDefault();
+            boolean canReset = widget.isPendingModifiedFromDefault();
 
-            gui.fill(scrolledReset.x, scrolledReset.y, scrolledReset.maxX, scrolledReset.maxY, resetHovered && canReset ? 0x40FFFFFF : 0x20000000);
+            int resetBg = resetHovered && canReset ? cfg.colorResetButtonBgHover : cfg.colorResetButtonBgDefault;
+            gui.fill(scrolledReset.x, scrolledReset.y, scrolledReset.maxX, scrolledReset.maxY, resetBg);
 
             int rx = scrolledReset.x + (scrolledReset.width - cfg.resetIconSize) / 2;
             int ry = scrolledReset.y + (scrolledReset.height - cfg.resetIconSize) / 2;
 
             renderResetIcon(gui, rx, ry, hovered, canReset, cfg);
         }
+
+        if (focusedItem != null) {
+            Bounds scrolledRow = layout.getScrolledOptionBounds(focusedRow.rowBounds, optionScroll);
+            if (!(scrolledRow.y + scrolledRow.height < layout.optionArea.y + cfg.tabScissorClipPaddingY || scrolledRow.y > layout.optionArea.maxY)) {
+                int textY = layout.getScrolledTextY(focusedRow.textY, optionScroll);
+                OptionWidget<?> widget = focusedItem.widget();
+                Option<?> option = widget.getOption();
+
+                gui.fill(layout.optionArea.x, scrolledRow.y, layout.optionArea.x + scrolledRow.width, scrolledRow.y + scrolledRow.height, cfg.colorItemSelectedBackground);
+                gui.text(screen.getFont(), option.getName(), focusedRow.textX, textY, cfg.colorItemSelectedText, false);
+
+                gui.enableScissor(layout.optionArea.x, layout.optionArea.y, layout.optionArea.maxX, layout.optionArea.maxY);
+                widget.render(screen.getFont(), gui, layout, scrolledRow.x, scrolledRow.y, scrolledRow.width, scrolledRow.height, mouseX, mouseY);
+                gui.disableScissor();
+
+                Bounds scrolledReset = layout.getScrolledResetButtonBounds(focusedRow.resetButtonBounds, optionScroll);
+                boolean resetHovered = scrolledReset.contains(mouseX, mouseY);
+                boolean canReset = widget.isPendingModifiedFromDefault();
+
+                int resetBg = resetHovered && canReset ? cfg.colorResetButtonBgHover : cfg.colorResetButtonBgDefault;
+                gui.fill(scrolledReset.x, scrolledReset.y, scrolledReset.maxX, scrolledReset.maxY, resetBg);
+
+                int rx = scrolledReset.x + (scrolledReset.width - cfg.resetIconSize) / 2;
+                int ry = scrolledReset.y + (scrolledReset.height - cfg.resetIconSize) / 2;
+
+                renderResetIcon(gui, rx, ry, true, canReset, cfg);
+            }
+        }
+
         gui.disableScissor();
 
         renderScrollbar(gui, layout, layout.optionScrollbarTrack, optionScroll, layout.totalOptionHeight, cfg);
     }
 
     private void renderResetIcon(GuiCompat gui, int rx, int ry, boolean hovered, boolean canReset, LayoutConfig cfg) {
-        float alpha = canReset ? (hovered ? 1.0f : 0.8f) : 0.3f;
-        float r = canReset ? 0.9f : 0.5f;
-        float g = canReset ? 0.3f : 0.5f;
-        float b = canReset ? 0.3f : 0.5f;
+        float alpha = canReset ? (hovered ? cfg.resetIconAlphaHover : cfg.resetIconAlphaDefault) : cfg.resetIconAlphaDisabled;
+        float r = canReset ? cfg.resetIconActiveR : cfg.resetIconInactiveR;
+        float g = canReset ? cfg.resetIconActiveG : cfg.resetIconInactiveG;
+        float b = canReset ? cfg.resetIconActiveB : cfg.resetIconInactiveB;
 
         //#if MC >= 12106
         gui.blit(RenderPipelines.GUI_TEXTURED, RESET_BUTTON_TEXTURE, rx, ry, 0.0f, 0.0f, cfg.resetIconSize, cfg.resetIconSize, cfg.resetIconSize, cfg.resetIconSize, colorFromArgbFloat(alpha, r, g, b));
@@ -248,17 +324,15 @@ public class ConfigScreenRenderer {
         gui.textWithWordWrap(screen.getFont(), option.getDescription(), x, y + screen.getFont().lineHeight + cfg.descTitleSpacingY, wrapW, cfg.colorTextSecondary);
     }
 
-    private void renderOverlay(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY, float partialTick, OverlayController overlayController) {
-        if (overlayController.hasActiveOverlay()) {
-            ScreenOverlay overlay = overlayController.getActiveOverlay();
-            if (overlay != null) {
-                if (overlay.shouldDimBackground()) {
-                    // TODO: move magic number to layout config
-                    gui.fill(0, 0, screen.width, screen.height, 0x66000000);
-                }
-                overlay.render(screen.getFont(), gui, mouseX, mouseY, partialTick, layout);
-            }
+    private void renderOverlays(GuiCompat gui, ConfigScreen screen, LayoutEngine layout, LayoutConfig cfg, int mouseX, int mouseY, float partialTick, OverlayController overlay) {
+        if (!overlay.hasActiveOverlay()) {
+            return;
         }
+        List<OverlayWidget> overlays = overlay.getOverlays();
+        if (overlays.stream().anyMatch(OverlayWidget::shouldDimBackground)) {
+            gui.fill(0, 0, screen.width, screen.height, cfg.colorOverlayDimBackground);
+        }
+        overlays.forEach(o -> o.render(screen.getFont(), gui, layout, 0, 0, screen.width, screen.height, mouseX, mouseY));
     }
 
     private static int colorFromArgbFloat(float a, float r, float g, float b) {
