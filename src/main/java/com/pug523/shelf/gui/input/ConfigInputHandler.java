@@ -2,64 +2,74 @@ package com.pug523.shelf.gui.input;
 
 import java.util.List;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
-import com.pug523.shelf.gui.controller.ScrollController;
-import com.pug523.shelf.config.Option;
+import com.pug523.shelf.gui.controller.*;
 import com.pug523.shelf.gui.TabNode;
-import com.pug523.shelf.gui.controller.ConfigChangeController;
-import com.pug523.shelf.gui.controller.OptionContextController;
-import com.pug523.shelf.gui.controller.OptionFocusController;
-import com.pug523.shelf.gui.controller.TabTreeController;
 import com.pug523.shelf.gui.layout.LayoutConfig;
 import com.pug523.shelf.gui.layout.LayoutEngine;
 import com.pug523.shelf.gui.layout.Bounds;
 import com.pug523.shelf.gui.layout.OptionRowLayout;
 import com.pug523.shelf.gui.model.OptionContext;
 import com.pug523.shelf.gui.model.RenderableItem;
-import com.pug523.shelf.gui.controller.OverlayController;
-import com.pug523.shelf.gui.overlay.ScreenOverlay;
 import com.pug523.shelf.gui.sound.SoundUtil;
-import com.pug523.shelf.gui.widget.OptionWidget;
+import com.pug523.shelf.gui.widget.option.OptionWidget;
 
+import com.pug523.shelf.gui.widget.SearchBarWidget;
 import net.minecraft.util.Mth;
 
 public final class ConfigInputHandler {
-
     private final TabTreeController tabs;
     private final ScrollController scrolls;
     private final OptionContextController options;
     private final OptionFocusController focus;
-    private final ConfigChangeController changes;
     private final OverlayController overlays;
+    private final ConfigChangeController change;
+
+    private final SearchBarWidget searchBar;
 
     private boolean isDraggingTabScrollBar = false;
     private boolean isDraggingOptionScrollBar = false;
 
     public ConfigInputHandler(TabTreeController tabs, ScrollController scrolls, OptionContextController options,
-                              OptionFocusController focus, ConfigChangeController changes, OverlayController overlays) {
+                              OptionFocusController focus, OverlayController overlays, ConfigChangeController change, SearchBarWidget searchBar) {
         this.tabs = tabs;
         this.scrolls = scrolls;
         this.options = options;
         this.focus = focus;
-        this.changes = changes;
         this.overlays = overlays;
+        this.change = change;
+        this.searchBar = searchBar;
+    }
+
+    private List<RenderableItem> getFilteredItems() {
+        return this.searchBar.getController().getFilteredOptions();
+    }
+
+    private List<TabNode> getFilteredTabs() {
+        return this.searchBar.getController().getFilteredTabs();
+    }
+
+    private void updateDirty() {
+        this.change.setDirty(this.options.getContext().hasPendingChanges());
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button, int modifiers, LayoutEngine layout) {
         if (overlays.hasActiveOverlay()) {
-            ScreenOverlay overlay = overlays.getActiveOverlay();
-            if (overlay != null) {
-                overlay.mouseClicked(mouseX, mouseY, button, layout);
+            if (overlays.getOverlays().stream().anyMatch(o -> o.mouseClicked(mouseX, mouseY, button, modifiers, layout))) {
+                updateDirty();
                 return true;
             }
         }
 
-        // if (button != InputUtil.LEFT_MOUSE_BUTTON) {
-        //     return false;
-        // }
+        if (this.searchBar.mouseClicked(mouseX, mouseY, button, modifiers, layout)) {
+            unfocusCurrentOption(layout);
+            updateDirty();
+            return true;
+        }
 
         if (!layout.isWithinContentArea(mouseY)) {
+            updateDirty();
             return false;
         }
 
@@ -78,6 +88,7 @@ public final class ConfigInputHandler {
 
                 boolean forceJump = mouseY < barY || mouseY >= barY + barHeight;
                 handleScrollBarDrag(mouseY, layout, true, forceJump);
+                updateDirty();
                 return true;
             }
         }
@@ -95,19 +106,25 @@ public final class ConfigInputHandler {
 
                     boolean forceJump = mouseY < barY || mouseY >= barY + barHeight;
                     handleScrollBarDrag(mouseY, layout, false, forceJump);
+                    updateDirty();
                     return true;
                 }
             }
         }
 
         if (layout.isMouseOverTabs(mouseX)) {
-            return handleTabClick(mouseX, mouseY, modifiers, layout);
+            boolean result = handleTabClick(mouseX, mouseY, button, modifiers, layout);
+            updateDirty();
+            return result;
         }
 
         if (layout.isMouseOverOptions(mouseX)) {
-            return handleOptionClick(mouseX, mouseY, modifiers, layout);
+            boolean result = handleOptionClick(mouseX, mouseY, button, modifiers, layout);
+            updateDirty();
+            return result;
         }
 
+        updateDirty();
         return false;
     }
 
@@ -129,7 +146,8 @@ public final class ConfigInputHandler {
             OptionContext context = options.getContext();
             if (context != null) {
                 int contentHeight = 0;
-                if (!layout.optionRows.isEmpty()) {
+                List<RenderableItem> filteredItems = getFilteredItems();
+                if (!layout.optionRows.isEmpty() && !filteredItems.isEmpty()) {
                     OptionRowLayout lastRow = layout.optionRows.get(layout.optionRows.size() - 1);
                     contentHeight = lastRow.rowBounds.maxY + cfg.optionItemStartOffsetY;
                 }
@@ -140,47 +158,40 @@ public final class ConfigInputHandler {
 
     public void mouseReleased(double mouseX, double mouseY, int button, LayoutEngine layout) {
         if (overlays.hasActiveOverlay()) {
-            ScreenOverlay overlay = overlays.getActiveOverlay();
-            if (overlay != null) {
-                overlay.mouseReleased(mouseX, mouseY, button, layout);
-                isDraggingTabScrollBar = false;
-                isDraggingOptionScrollBar = false;
-                return;
-            }
+            overlays.getOverlays().forEach(o -> o.mouseReleased(mouseX, mouseY, button, layout));
+            isDraggingTabScrollBar = false;
+            isDraggingOptionScrollBar = false;
+            updateDirty();
+            return;
         }
 
-        if (button == InputUtil.LEFT_MOUSE_BUTTON) {
+        if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             isDraggingTabScrollBar = false;
             isDraggingOptionScrollBar = false;
         }
 
-        OptionContext context = options.getContext();
-
-        if (context == null) {
-            return;
-        }
-
-        for (RenderableItem item : context.items()) {
+        for (RenderableItem item : getFilteredItems()) {
             if (item.isHeader()) {
                 continue;
             }
 
             OptionWidget<?> widget = item.widget();
-
             if (widget != null) {
                 widget.mouseReleased(mouseX, mouseY, button, layout);
             }
         }
+        updateDirty();
     }
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double dy, LayoutEngine layout) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy, LayoutEngine layout) {
         if (overlays.hasActiveOverlay()) {
-            // TODO:
-            // overlays.getActiveOverlay().mouseScrolled();
-            return false;
+            if (overlays.getOverlays().stream().anyMatch(o -> o.mouseScrolled(mouseX, mouseY, dx, dy, layout))) {
+                return true;
+            }
         }
 
         if (!layout.isWithinContentArea(mouseY)) {
+            updateDirty();
             return false;
         }
 
@@ -188,30 +199,35 @@ public final class ConfigInputHandler {
         if (layout.isMouseOverTabs(mouseX)) {
             int totalTabHeight = tabs.totalHeight(config);
             scrolls.scrollTabs(-dy * config.tabScrollSpeed, totalTabHeight, layout.tabArea.height);
+            updateDirty();
             return true;
         }
         if (layout.isMouseOverOptions(mouseX)) {
             OptionContext context = options.getContext();
             if (context != null) {
                 int contentHeight = 0;
-                if (!layout.optionRows.isEmpty()) {
+                List<RenderableItem> filteredItems = getFilteredItems();
+                if (!layout.optionRows.isEmpty() && !filteredItems.isEmpty()) {
                     OptionRowLayout lastRow = layout.optionRows.get(layout.optionRows.size() - 1);
                     contentHeight = lastRow.rowBounds.maxY + config.optionItemStartOffsetY;
                 }
                 scrolls.scrollOptions(-dy * config.optionScrollSpeed, contentHeight, layout.optionArea.height);
+                updateDirty();
                 return true;
             }
         }
 
+        updateDirty();
         return false;
     }
 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY,
                                 LayoutEngine layout) {
         if (overlays.hasActiveOverlay()) {
-            // TODO:
-            // overlays.getActiveOverlay().mouseDragged();
-            return false;
+            if (overlays.getOverlays().stream().anyMatch(o -> o.mouseDragged(mouseX, mouseY, button, dragX, dragY, layout))) {
+                updateDirty();
+                return true;
+            }
         }
 
         LayoutConfig cfg = layout.getConfig();
@@ -223,13 +239,15 @@ public final class ConfigInputHandler {
                 double scrollDelta = (dragY / (double) height) * (totalTabHeight - height);
                 scrolls.setTabScroll(scrolls.getTabScroll() + scrollDelta, totalTabHeight, height);
             }
+            updateDirty();
             return true;
         }
         if (isDraggingOptionScrollBar) {
             OptionContext context = options.getContext();
             if (context != null) {
                 int contentHeight = 0;
-                if (!layout.optionRows.isEmpty()) {
+                List<RenderableItem> filteredItems = getFilteredItems();
+                if (!layout.optionRows.isEmpty() && !filteredItems.isEmpty()) {
                     OptionRowLayout lastRow = layout.optionRows.get(layout.optionRows.size() - 1);
                     contentHeight = lastRow.rowBounds.maxY + cfg.optionItemStartOffsetY;
                 }
@@ -238,73 +256,85 @@ public final class ConfigInputHandler {
                     scrolls.setOptionScroll(scrolls.getOptionScroll() + scrollDelta, contentHeight, height);
                 }
             }
+            updateDirty();
             return true;
         }
 
-        OptionContext context = options.getContext();
-        if (context == null) {
-            return false;
-        }
-
+        List<RenderableItem> filteredItems = getFilteredItems();
         int focusedIndex = focus.getFocused();
-        if (focusedIndex < 0 || focusedIndex >= context.items().size()) {
+        if (focusedIndex < 0 || focusedIndex >= filteredItems.size()) {
+            updateDirty();
             return false;
         }
 
-        RenderableItem item = context.items().get(focusedIndex);
+        RenderableItem item = filteredItems.get(focusedIndex);
         if (item.isHeader()) {
+            updateDirty();
             return false;
         }
 
         OptionWidget<?> widget = item.widget();
         if (widget == null) {
+            updateDirty();
             return false;
         }
 
-        if (widget.mouseDragged(mouseX, mouseY, button, dragX, dragY, layout)) {
-            changes.markDirty();
-            return true;
-        }
-
-        return false;
+        boolean result = widget.mouseDragged(mouseX, mouseY, button, dragX, dragY, layout);
+        updateDirty();
+        return result;
     }
 
     public boolean keyPressed(int keycode, int scancode, int modifiers, LayoutEngine layout) {
         if (overlays.hasActiveOverlay()) {
-            ScreenOverlay overlay = overlays.getActiveOverlay();
-            if (overlay != null) {
-                boolean result = overlay.keyPressed(keycode, scancode, modifiers, layout);
-                if (!result && keycode == GLFW.GLFW_KEY_ESCAPE) {
-                    overlays.closeActive();
-                    result = true;
-                }
-                return result;
+            if (overlays.getOverlays().stream().anyMatch(o -> o.keyPressed(keycode, scancode, modifiers, layout))) {
+                updateDirty();
+                return true;
             }
         }
 
-        OptionContext context = options.getContext();
-        if (context == null) {
+        if (this.searchBar.isFocused()) {
+            if (keycode == InputConstants.KEY_ESCAPE) {
+                this.searchBar.setFocused(false);
+                updateDirty();
+                return true;
+            }
+            boolean result = this.searchBar.keyPressed(keycode, scancode, modifiers, layout);
+            updateDirty();
+            return result;
+        }
+
+        OptionWidget<?> focusedWidget = getFocusedWidget();
+        if (focusedWidget != null) {
+            if (focusedWidget.keyPressed(keycode, scancode, modifiers, layout)) {
+                updateDirty();
+                return true;
+            }
+        }
+
+        List<RenderableItem> filteredItems = getFilteredItems();
+        if (filteredItems.isEmpty()) {
+            updateDirty();
             return false;
         }
 
-        if (keycode == GLFW.GLFW_KEY_UP || keycode == GLFW.GLFW_KEY_DOWN) {
+        if (keycode == InputConstants.KEY_UP || keycode == InputConstants.KEY_DOWN) {
             int current = focus.getFocused();
-            int totalItems = context.items().size();
+            int totalItems = filteredItems.size();
             int next = current;
 
             do {
-                if (keycode == GLFW.GLFW_KEY_UP) {
+                if (keycode == InputConstants.KEY_UP) {
                     next = (next <= 0) ? totalItems - 1 : next - 1;
                 } else { // DOWN
                     next = (next >= totalItems - 1) ? 0 : next + 1;
                 }
                 if (next == current)
                     break;
-            } while (context.items().get(next).isHeader());
+            } while (filteredItems.get(next).isHeader());
 
             if (next != current && next < totalItems) {
                 if (current >= 0 && current < totalItems) {
-                    RenderableItem prevItem = context.items().get(current);
+                    RenderableItem prevItem = filteredItems.get(current);
                     if (prevItem != null && !prevItem.isHeader() && prevItem.widget() != null) {
                         prevItem.widget().focusChanged(false, layout);
                     }
@@ -312,7 +342,7 @@ public final class ConfigInputHandler {
 
                 focus.setFocused(next);
 
-                RenderableItem nextItem = context.items().get(next);
+                RenderableItem nextItem = filteredItems.get(next);
                 if (nextItem != null && !nextItem.isHeader() && nextItem.widget() != null) {
                     nextItem.widget().focusChanged(true, layout);
                 }
@@ -335,49 +365,92 @@ public final class ConfigInputHandler {
                     scrolls.setOptionScroll(itemBottomY - visibleHeight, contentHeight, visibleHeight);
                 }
 
+                updateDirty();
                 return true;
             }
         }
 
         boolean result = false;
-        for (RenderableItem item : context.items()) {
+        for (RenderableItem item : filteredItems) {
             OptionWidget<?> widget = item.widget();
-
-            if (widget != null) {
+            if (widget != null && widget != focusedWidget) {
                 result |= widget.keyPressed(keycode, scancode, modifiers, layout);
             }
         }
+        updateDirty();
         return result;
     }
 
     public boolean charTyped(int codepoint, int modifiers, LayoutEngine layout) {
         if (overlays.hasActiveOverlay()) {
-            ScreenOverlay overlay = overlays.getActiveOverlay();
-            if (overlay != null) {
-                return overlay.charTyped(codepoint, modifiers, layout);
+            if (overlays.getOverlays().stream().anyMatch(o -> o.charTyped(codepoint, modifiers, layout))) {
+                updateDirty();
+                return true;
             }
         }
 
-        OptionContext context = options.getContext();
-        if (context == null) {
-            return false;
+        if (this.searchBar.isFocused()) {
+            boolean result = this.searchBar.charTyped(codepoint, modifiers, layout);
+            updateDirty();
+            return result;
         }
-        boolean result = false;
-        for (RenderableItem item : context.items()) {
-            OptionWidget<?> widget = item.widget();
 
-            if (widget != null) {
+        OptionWidget<?> focusedWidget = getFocusedWidget();
+        if (focusedWidget != null) {
+            if (focusedWidget.charTyped(codepoint, modifiers, layout)) {
+                updateDirty();
+                return true;
+            }
+        }
+
+        List<RenderableItem> filteredItems = getFilteredItems();
+        boolean result = false;
+        for (RenderableItem item : filteredItems) {
+            OptionWidget<?> widget = item.widget();
+            if (widget != null && widget != focusedWidget) {
                 result |= widget.charTyped(codepoint, modifiers, layout);
             }
         }
+        updateDirty();
         return result;
     }
 
-    private boolean handleTabClick(double mouseX, double mouseY, int modifiers, LayoutEngine layout) {
-        List<TabNode> flat = tabs.getFlat();
+    private OptionWidget<?> getFocusedWidget() {
+        List<RenderableItem> filteredItems = getFilteredItems();
+        int focusedIndex = focus.getFocused();
+        if (focusedIndex >= 0 && focusedIndex < filteredItems.size()) {
+            RenderableItem item = filteredItems.get(focusedIndex);
+            if (item != null && !item.isHeader()) {
+                return item.widget();
+            }
+        }
+        return null;
+    }
 
-        for (int i = 0; i < flat.size(); i++) {
-            TabNode node = flat.get(i);
+    private void unfocusCurrentOption(LayoutEngine layout) {
+        int currentFocused = focus.getFocused();
+        List<RenderableItem> filteredItems = getFilteredItems();
+        if (currentFocused >= 0 && currentFocused < filteredItems.size()) {
+            RenderableItem prevItem = filteredItems.get(currentFocused);
+            if (prevItem != null && !prevItem.isHeader() && prevItem.widget() != null) {
+                prevItem.widget().focusChanged(false, layout);
+            }
+        }
+        focus.setFocused(-1);
+    }
+
+    private boolean handleTabClick(double mouseX, double mouseY, int button, int modifiers, LayoutEngine layout) {
+        if (button != InputConstants.MOUSE_BUTTON_LEFT) {
+            return false;
+        }
+
+        List<TabNode> filteredTabs = getFilteredTabs();
+
+        for (int i = 0; i < filteredTabs.size(); i++) {
+            TabNode node = filteredTabs.get(i);
+            if (i >= layout.tabItemBounds.size()) {
+                break;
+            }
             Bounds baseBounds = layout.tabItemBounds.get(i);
 
             int yPos = baseBounds.y - (int) scrolls.getTabScroll();
@@ -395,10 +468,10 @@ public final class ConfigInputHandler {
             if (node.hasChildren() && mouseX >= toggleX && mouseX <= toggleX + 16) {
                 tabs.toggle(node);
             } else {
-                OptionContext context = options.getContext();
+                List<RenderableItem> filteredItems = getFilteredItems();
                 int currentFocused = focus.getFocused();
-                if (context != null && currentFocused >= 0 && currentFocused < context.items().size()) {
-                    RenderableItem prevItem = context.items().get(currentFocused);
+                if (currentFocused >= 0 && currentFocused < filteredItems.size()) {
+                    RenderableItem prevItem = filteredItems.get(currentFocused);
                     if (prevItem != null && !prevItem.isHeader() && prevItem.widget() != null) {
                         prevItem.widget().focusChanged(false, layout);
                     }
@@ -415,16 +488,17 @@ public final class ConfigInputHandler {
         return false;
     }
 
-    private boolean handleOptionClick(double mouseX, double mouseY, int modifiers, LayoutEngine layout) {
-        OptionContext context = options.getContext();
-        if (context == null) {
+    private boolean handleOptionClick(double mouseX, double mouseY, int button, int modifiers, LayoutEngine layout) {
+        List<RenderableItem> filteredItems = getFilteredItems();
+        if (filteredItems.isEmpty()) {
             return false;
         }
 
-        List<RenderableItem> items = context.items();
-
-        for (int i = 0; i < items.size(); i++) {
-            RenderableItem item = items.get(i);
+        for (int i = 0; i < filteredItems.size(); i++) {
+            RenderableItem item = filteredItems.get(i);
+            if (i >= layout.optionRows.size()) {
+                break;
+            }
             OptionRowLayout row = layout.optionRows.get(i);
 
             if (item.isHeader()) {
@@ -438,8 +512,8 @@ public final class ConfigInputHandler {
             }
 
             int previousFocusedIndex = focus.getFocused();
-            if (previousFocusedIndex >= 0 && previousFocusedIndex != i && previousFocusedIndex < items.size()) {
-                RenderableItem prevItem = items.get(previousFocusedIndex);
+            if (previousFocusedIndex >= 0 && previousFocusedIndex != i && previousFocusedIndex < filteredItems.size()) {
+                RenderableItem prevItem = filteredItems.get(previousFocusedIndex);
                 if (prevItem != null && !prevItem.isHeader() && prevItem.widget() != null) {
                     prevItem.widget().focusChanged(false, layout);
                 }
@@ -452,31 +526,18 @@ public final class ConfigInputHandler {
             }
             widget.focusChanged(true, layout);
 
-            Option<?> option = widget.getOption();
-            if (option == null) {
-                return true;
-            }
-
             Bounds currentResetBounds = new Bounds(row.resetButtonBounds.x, yPos + 4, row.resetButtonBounds.width,
                 row.resetButtonBounds.height);
 
             if (currentResetBounds.contains((int) mouseX, (int) mouseY)) {
-                if (option.isPendingModifiedFromDefault()) {
-                    option.resetPendingToDefault();
+                if (widget.isPendingModifiedFromDefault()) {
+                    widget.resetPendingToDefault();
                     SoundUtil.clickSound();
-
-                    changes.markDirty();
                 }
                 return true;
             }
 
-            widget.mouseClicked(mouseX, mouseY, InputUtil.LEFT_MOUSE_BUTTON, modifiers, layout);
-            if (option.isPendingModifiedFromActual()) {
-                changes.markDirty();
-                return true;
-            }
-
-            return true;
+            return widget.mouseClicked(mouseX, mouseY, button, modifiers, layout);
         }
 
         return false;
