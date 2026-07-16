@@ -90,10 +90,10 @@ public class ColorPickerOptionWidget extends OptionWidget<Integer> {
             int colorB = (0xFF << 24) | (int) (baseB * alphaFactor);
 
             MutableComponent result = ComponentCompat.empty();
-            result.append(ComponentCompat.literal(rawText.substring(0, 2)).withColor(colorA));
-            result.append(ComponentCompat.literal(rawText.substring(2, 4)).withColor(colorR));
-            result.append(ComponentCompat.literal(rawText.substring(4, 6)).withColor(colorG));
-            result.append(ComponentCompat.literal(rawText.substring(6, 8)).withColor(colorB));
+            result.append(ComponentCompat.withColor(ComponentCompat.literal(rawText.substring(0, 2)), (colorA)));
+            result.append(ComponentCompat.withColor(ComponentCompat.literal(rawText.substring(2, 4)), (colorR)));
+            result.append(ComponentCompat.withColor(ComponentCompat.literal(rawText.substring(4, 6)), (colorG)));
+            result.append(ComponentCompat.withColor(ComponentCompat.literal(rawText.substring(6, 8)), (colorB)));
             return result;
         } catch (Exception e) {
             return ComponentCompat.literal(rawText);

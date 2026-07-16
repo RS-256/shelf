@@ -235,7 +235,7 @@ public class ConfigScreen extends Screen {
     }
     //#else
     //$$ public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
-    //$$     return input.mouseScrolled(mouseX, mouseY, scrollY, layout)
+    //$$     return input.mouseScrolled(mouseX, mouseY, 0.0f, scrollY, layout)
     //$$             || super.mouseScrolled(mouseX, mouseY, scrollY);
     //$$ }
     //#endif

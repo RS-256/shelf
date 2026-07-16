@@ -143,13 +143,21 @@ public class TextInputFieldWidget<T> implements ClickableWidget {
         this.editBox.setMaxLength(length);
     }
 
+    private void moveCursor(int i) {
+        //#if MC >= 12002
+        this.editBox.moveCursor(i, false);
+        //#else
+        //$$ this.editBox.moveCursor(i);
+        //#endif
+    }
+
     public void setText(String text) {
         if (!text.equals(this.editBox.getValue())) {
             this.editBox.setValue(text);
             if (this.rightAlign) {
                 this.editBox.setCursorPosition(text.length());
                 this.editBox.setHighlightPos(text.length());
-                this.editBox.moveCursor(0, false);
+                this.moveCursor(0);
             }
             updateEditBoxBound();
         }
@@ -181,10 +189,10 @@ public class TextInputFieldWidget<T> implements ClickableWidget {
 
             if (this.rightAlign) {
                 this.editBox.setCursorPosition(this.editBox.getValue().length());
-                this.editBox.moveCursor(0, false);
+                this.moveCursor(0);
             } else {
                 this.editBox.setCursorPosition(0);
-                this.editBox.moveCursor(0, false);
+                this.moveCursor(0);
             }
         }
         updateEditBoxBound();
@@ -206,7 +214,11 @@ public class TextInputFieldWidget<T> implements ClickableWidget {
         this.editBox.setX(this.x);
         this.editBox.setY(this.y);
         this.editBox.setWidth(this.width);
+        //#if MC >= 12002
         this.editBox.setHeight(this.height);
+        //#else
+        //$$ this.editBox.height = this.height;
+        //#endif
     }
 
     @Override
@@ -272,7 +284,7 @@ public class TextInputFieldWidget<T> implements ClickableWidget {
             this.drawX = this.editBox.getX();
             if (!isFocused()) {
                 this.editBox.setCursorPosition(0);
-                this.editBox.moveCursor(0, false);
+                this.moveCursor(0);
             }
             this.editBox.setTextColor(textColor);
             this.editBox.extractWidgetRenderState(gui.getGraphics(), mouseX, mouseY, 1.0f);

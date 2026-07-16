@@ -59,6 +59,14 @@ public class ComponentCompat {
         //#endif
     }
 
+    public static Component withColor(MutableComponent component, int color) {
+        //#if MC >= 12002
+        return component.withColor(color);
+        //#else
+        //$$ return component.withStyle(component.getStyle().withColor(color));
+        //#endif
+    }
+
     public static int width(Font font, String text) {
         return font.width(text);
     }
