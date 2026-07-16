@@ -3,6 +3,10 @@ package com.pug523.shelf.compat;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 
+//#if MC >= 12111
+import com.mojang.blaze3d.platform.cursor.CursorType;
+//#endif
+
 //#if MC >= 12106
 import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -204,5 +208,11 @@ public class GuiCompat {
         //#endif
     // @formatter:on
     //$$ }
+    //#endif
+
+    //#if MC >= 12111
+    public void requestCursor(CursorType type) {
+        this.graphics.requestCursor(type);
+    }
     //#endif
 }
