@@ -32,10 +32,8 @@ public class CompositeRenderTypeMixin {
     // @formatter:off
     //#if MC <= 12105
 
-        //#if MC >= 12104
-        //$$ @Shadow @Final private RenderPipeline renderPipeline;
-        //#endif
-
+    //#if MC >= 12104
+    //$$ @Shadow @Final private RenderPipeline renderPipeline;
     //$$ @Inject(
     //$$         method = "draw(Lnet/mojang/blaze3d/vertex/MeshData;)V",
     //$$         at = @At(
@@ -48,6 +46,7 @@ public class CompositeRenderTypeMixin {
     //$$         UniformRegistry.applyIfPresent(renderPass);
     //$$     }
     //$$ }
+    //#endif
     //#endif
     // @formatter:on
 }

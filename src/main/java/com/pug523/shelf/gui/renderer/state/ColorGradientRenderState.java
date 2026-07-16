@@ -4,18 +4,21 @@ import com.pug523.shelf.gui.renderer.RenderUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.pug523.shelf.compat.GuiCompat;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.renderer.RenderPipelines;
 
 //#if MC >= 12106
 import org.joml.Matrix3x2f;
 //#else
 //$$ import com.mojang.blaze3d.vertex.PoseStack;
+//#endif
+
+//#if MC >= 12104
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import net.minecraft.client.renderer.RenderPipelines;
 //#endif
 
 public class ColorGradientRenderState implements ShelfGuiElementRenderState {
@@ -74,10 +77,12 @@ public class ColorGradientRenderState implements ShelfGuiElementRenderState {
         return bounds;
     }
 
+    //#if MC >= 12104
     @Override
     public @NonNull RenderPipeline pipeline() {
         return RenderPipelines.GUI;
     }
+    //#endif
 
     @Override
     public @Nullable ScreenRectangle scissorArea() {

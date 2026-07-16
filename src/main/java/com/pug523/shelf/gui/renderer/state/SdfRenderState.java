@@ -1,7 +1,5 @@
 package com.pug523.shelf.gui.renderer.state;
 
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.pug523.shelf.gui.renderer.RenderPipelines;
@@ -31,6 +29,12 @@ import org.lwjgl.system.MemoryStack;
 //$$ import net.minecraft.client.renderer.RenderType;
 //#endif
 
+//#if MC >= 12104
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.RenderPass;
+//#else
+//$$ import com.mojang.blaze3d.shaders.Uniform;
+//#endif
 
 public class SdfRenderState implements ShelfGuiElementRenderState, UniformApplier {
     //#if MC >= 12106
@@ -110,10 +114,12 @@ public class SdfRenderState implements ShelfGuiElementRenderState, UniformApplie
     //#endif
     // @formatter:on
 
+    //#if MC >= 12104
     @Override
     public @NonNull RenderPipeline pipeline() {
         return RenderPipelines.SDF_PIPELINE;
     }
+    //#endif
 
     @Override
     public @Nullable ScreenRectangle scissorArea() {
@@ -137,6 +143,7 @@ public class SdfRenderState implements ShelfGuiElementRenderState, UniformApplie
         RenderStateUtil.addVertexWith2DPose(vertices, this.pose, x, y).setUv(u, v).setColor(this.color);
     }
 
+    //#if MC >= 12104
     @Override
     public void applyUniforms(RenderPass renderPass) {
         //#if MC >= 12106
@@ -145,4 +152,10 @@ public class SdfRenderState implements ShelfGuiElementRenderState, UniformApplie
         //$$ renderPass.setUniform(RenderPipelines.SDF_PARAMS_UNIFORM_NAME, this.width, this.height, this.radius, 0.0f);
         //#endif
     }
+    //#else
+    //$$ @Override
+    //$$ public void applyUniforms(Uniform sdfParams) {
+    //$$     sdfParams.set(this.width, this.height, this.radius, 0.0f);
+    //$$ }
+    //#endif
 }

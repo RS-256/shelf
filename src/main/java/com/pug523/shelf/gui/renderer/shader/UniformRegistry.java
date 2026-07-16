@@ -1,9 +1,13 @@
 package com.pug523.shelf.gui.renderer.shader;
 
-import com.mojang.blaze3d.systems.RenderPass;
-
 import java.util.HashMap;
 import java.util.Map;
+
+//#if MC >= 12104
+import com.mojang.blaze3d.systems.RenderPass;
+//#else
+//$$ import com.mojang.blaze3d.shaders.Uniform;
+//#endif
 
 public final class UniformRegistry {
     //#if MC >= 12106
@@ -43,11 +47,20 @@ public final class UniformRegistry {
     //$$     CURRENT_APPLIER.remove();
     //$$ }
 
+    //#if MC >= 12104
     //$$ public static void applyIfPresent(RenderPass pass) {
     //$$     UniformApplier applier = CURRENT_APPLIER.get();
     //$$     if (applier != null) {
     //$$         applier.applyUniforms(pass);
     //$$     }
     //$$ }
+    //#else
+    //$$ public static void applyIfPresent(Uniform uniform) {
+    //$$     UniformApplier applier = CURRENT_APPLIER.get();
+    //$$     if (applier != null) {
+    //$$         applier.applyUniforms(uniform);
+    //$$     }
+    //$$ }
+    //#endif
     //#endif
 }

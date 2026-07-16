@@ -2,27 +2,23 @@ package com.pug523.shelf.gui.renderer;
 
 // @formatter:off
 //#if MC <= 12105
-//$$ import com.mojang.blaze3d.buffers.BufferType;
-//$$ import com.mojang.blaze3d.buffers.BufferUsage;
 //$$ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-//$$ import com.mojang.blaze3d.vertex.PoseStack;
 //$$ import com.mojang.blaze3d.vertex.VertexFormat;
-//$$ import net.minecraft.client.renderer.RenderStateShard;
-//$$ import net.minecraft.client.renderer.RenderType;
+//$$ import net.minecraft.client.renderer.*;
     //#if MC >= 12104
-    //$$ import com.pug523.shelf.gui.renderer.RenderPipelines;
-    //#elseif MC >= 12102
-    //$$ import net.minecraft.client.renderer.RenderStateShard;
+    //$$ import com.mojang.blaze3d.buffers.BufferType;
+    //$$ import com.mojang.blaze3d.buffers.BufferUsage;
+    //$$ import com.mojang.blaze3d.vertex.PoseStack;
+    //#else
+    //$$ import com.mojang.blaze3d.shaders.Uniform;
+    //$$ import net.minecraft.client.Minecraft;
     //#endif
 //#endif
 // @formatter:on
 
+import net.minecraft.client.Minecraft;
 
-public class RenderTypes
-    //#if 12102 <= MC && MC <= 12103
-    //$$ extends RenderStateShard
-    //#endif
-{
+public class RenderTypes {
     //#if MC <= 12105
     //#if MC >= 12104
     //$$ public static final RenderType SDF_RENDER_TYPE = RenderType.create(
@@ -32,13 +28,36 @@ public class RenderTypes
     //$$     RenderType.CompositeState.builder().createCompositeState(false)
     //$$ );
     //#elseif MC >= 12102
+    //$$ private static final ShaderProgram SDF_SHADER = new ShaderProgram(ShaderIds.SDF, DefaultVertexFormat.POSITION_TEX_COLOR, ShaderDefines.EMPTY);
+    //$$ private static CompiledShaderProgram COMPILED_SDF_SHADER = null;
+    //$$ private static Uniform SDF_PARAMS_UNIFORM = null;
+    //$$ private static boolean initialized = false;
+    //$$ private static void init() {
+    //$$     if (!initialized) {
+    //$$         COMPILED_SDF_SHADER = Minecraft.getInstance().getShaderManager().getProgram(SDF_SHADER);
+    //$$         if (COMPILED_SDF_SHADER != null) {
+    //$$             SDF_PARAMS_UNIFORM = COMPILED_SDF_SHADER.getUniform(RenderPipelines.SDF_PARAMS_UNIFORM_NAME);
+    //$$         }
+    //$$         if (SDF_PARAMS_UNIFORM != null) {
+    //$$             initialized = true;
+    //$$         }
+    //$$     }
+    //$$ }
     //$$ public static final RenderType SDF_RENDER_TYPE = RenderType.create(
     //$$     "shelf_sdf",
     //$$     DefaultVertexFormat.POSITION_TEX_COLOR,
     //$$     VertexFormat.Mode.QUADS,
     //$$     RenderType.SMALL_BUFFER_SIZE,
-    //$$     RenderType.CompositeState.builder().setShaderState(new RenderStateShard.ShaderStateShard()).setTransparencyState(TRANSLUCENT_TRANSPARENCY).setDepthTestState(LEQUAL_DEPTH_TEST).createCompositeState(false)
+    //$$     RenderType.CompositeState.builder().setShaderState(new RenderStateShard.ShaderStateShard(SDF_SHADER)).setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY).setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST).createCompositeState(false)
     //$$ );
+    //$$ public static CompiledShaderProgram compiledSdfShader() {
+    //$$     init();
+    //$$     return COMPILED_SDF_SHADER;
+    //$$ }
+    //$$ public static Uniform sdfParamsUniform() {
+    //$$     init();
+    //$$     return SDF_PARAMS_UNIFORM;
+    //$$ }
     //#else
     //#endif
     //#endif

@@ -1,5 +1,6 @@
 package com.pug523.shelf.gui.renderer;
 
+//#if MC >= 12104
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.shaders.UniformType;
@@ -21,17 +22,18 @@ import com.mojang.blaze3d.pipeline.ColorTargetState;
 //#else
 //$$ import com.mojang.blaze3d.platform.DepthTestFunction;
 //#endif
+//#endif
 
 public class RenderPipelines {
     private RenderPipelines() {
     }
-
     //#if MC >= 12106
     public static final String SDF_PARAMS_UBO_NAME = "SdfParamsUbo";
     //#else
     //$$ public static final String SDF_PARAMS_UNIFORM_NAME = "SdfParams";
     //#endif
 
+    //#if MC >= 12104
     public static final Identifier SDF_PIPELINE_ID = IdentifierCompat.ofShelf("pipeline/sdf");
 
     // @formatter:off
@@ -71,4 +73,5 @@ public class RenderPipelines {
             //#endif
             .build();
     // @formatter:on
+    //#endif
 }

@@ -1,13 +1,15 @@
 package com.pug523.shelf.gui.renderer.shader;
 
 //#if MC <= 12105
-//$$ import com.mojang.blaze3d.pipeline.RenderPipeline;
-//$$ import com.mojang.blaze3d.pipeline.RenderTarget;
-//$$ import com.mojang.blaze3d.systems.RenderPass;
 //$$ import com.mojang.blaze3d.vertex.MeshData;
 //$$ import com.mojang.blaze3d.vertex.VertexFormat;
 //$$ import net.minecraft.client.renderer.RenderType;
 //$$ import com.pug523.shelf.gui.renderer.state.SdfRenderState;
+//#if MC >= 12104
+//$$ import com.mojang.blaze3d.pipeline.RenderTarget;
+//$$ import com.mojang.blaze3d.pipeline.RenderPipeline;
+//$$ import com.mojang.blaze3d.systems.RenderPass;
+//#endif
 //#endif
 
 //#if MC >= 12106
@@ -21,8 +23,13 @@ public class SdfRenderType {
 
     //$$ public SdfRenderType(String name, RenderType parentToken, SdfRenderState sdfState) {
     //$$     // Delegate buffer sizes and pipeline behaviors to the parent GUI render type
+    //#if MC >= 12104
     //$$     super(name, parentToken.bufferSize(), parentToken.affectsCrumbling(), parentToken.sortOnUpload(),
     //$$         () -> {}, () -> {});
+    //#else
+    //$$     super(name, parentToken.format(), parentToken.mode(), parentToken.bufferSize(), parentToken.affectsCrumbling(), parentToken.sortOnUpload(),
+    //$$     () -> {}, () -> {});
+    //#endif
     //$$     this.parentToken = parentToken;
     //$$     this.sdfState = sdfState;
     //$$ }
@@ -36,10 +43,12 @@ public class SdfRenderType {
     //$$     this.parentToken.draw(meshData);
     //$$ }
 
+    //#if MC >= 12104
     //$$ @Override
     //$$ public RenderTarget getRenderTarget() { return this.parentToken.getRenderTarget(); }
     //$$ @Override
     //$$ public RenderPipeline getRenderPipeline() { return this.parentToken.getRenderPipeline(); }
+    //#endif
     //$$ @Override
     //$$ public VertexFormat format() { return this.parentToken.format(); }
     //$$ @Override

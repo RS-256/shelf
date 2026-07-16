@@ -2,7 +2,6 @@ package com.pug523.shelf.gui.renderer.shader;
 
 //#if MC <= 12105
 //$$ import net.minecraft.client.renderer.RenderType;
-//$$ import com.pug523.shelf.gui.renderer.RenderPipelines;
 //$$ import com.pug523.shelf.gui.renderer.state.SdfRenderState;
 //$$ import java.util.HashMap;
 //$$ import java.util.Map;
